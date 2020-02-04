@@ -1,0 +1,19 @@
+#!/sbin/openrc-run
+# Copyright 2020 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="netifnames setup"
+description="sets the network interface names"
+
+depend() {
+    provide dev
+}
+
+start(){
+  set_netifnames
+  retval=$?
+  if [ ${retval} -eq 0 ]; then 
+    mark_service_started netifnames
+  fi
+  eend ${retval}
+}

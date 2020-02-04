@@ -1,0 +1,37 @@
+#!/usr/bin/env python3
+from subprocess import check_output
+from os import stat,minor,major
+from os.path import exists
+from re import match,sub
+from stat import S_ISBLK
+from argparse import ArgumentParser
+
+def parse_args():
+    global args
+    ap=ArgumentParser()
+    ap.add_argument(dest='io_latency')
+    ap.add_argument(dest='additional_devices',nargs='+')
+    args=ap.parse_args()
+
+def gen_io_lat_strings(iolat, extra_dev):
+    filesystems=check_output(['bash','-c',"cat /etc/fstab | sed -E '/^[ ]*[#].*$/d;/^\s*$/d;s@^[ ]*@@;/[1-9][0-9]*.[1-9][0-9]*.[1-9][0-9]*.[1-9][0-9]*[:]/d;/^[^/]/d;s@([^ ]*)[ ].*$@\\1@'"])
+    filesystems=filesystems.decode().split("\n")
+    for fs in filesystems:
+        if exists(fs) and S_ISBLK(stat(fs).st_mode):
+            st=stat(fs)
+            nums=str(major(st.st_rdev))+":"+str(minor(st.st_rdev))
+            print(nums+' target='+iolat)
+        with open('/proc/partitions') as f:
+            partitions=f.read().split('\n')
+    partitions=partitions[1:]
+    for line in partitions:
+        for dev in extra_dev:
+            pat='^[ ]*[0-9]+[ ]+[0-9]+[ ]+[1-9][0-9]*[ ]+'+dev+'[ ]*$'
+            if match(pat,line):
+                sub_match_pat='^[ ]*([0-9]+)[ ]+([0-9]+)[ ]+[1-9][0-9]*[ ]+([a-z]+)[ ]*$'
+                nums=sub(sub_match_pat,'\\1:\\2',line)
+                print( nums+" target="+iolat)
+
+if __name__=='__main__':
+    parse_args()
+    gen_io_lat_strings(args.io_latency,args.additional_devices)

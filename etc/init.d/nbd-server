@@ -1,0 +1,15 @@
+#!/sbin/openrc-run
+# Copyright 2019 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+# the server reads the "/etc/nbd-server/config" file
+
+name="nbd-server daemon"
+description=""
+command=nbd-server
+command_args="${nbd-server_args}"
+
+depend() {
+need net.dusteater iptables ip6tables
+}
+

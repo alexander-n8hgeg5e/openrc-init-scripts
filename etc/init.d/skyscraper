@@ -1,0 +1,116 @@
+#!/sbin/openrc-run
+# Copyright 2019 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="skyscraper"
+description=""
+
+depend() {
+need nfs in_tftpd_skyscraper net.enp3s0u3 dhcpd sshd
+}
+
+status() {
+    level=$(ssh -o ConnectTimeout=1 root@skyscraper "rc-status -r" 2> /dev/null)
+    [[ $level == default ]] && ! service_stopping skyscraper && mark_service_started skyscraper
+    default_status
+}
+
+start() {
+    
+    ebegin "Starting skyscraper..."
+    mark_service_starting skyscraper
+    
+    sudo ethtool enp3s0u3|grep -q 'Speed: 1000M'
+    r_full_speed=$?
+    sudo ethtool enp3s0u3|grep -q 'Link detected: yes'
+    r_has_link=$?
+
+    if [ "${r_full_speed}" == "0" ] ; then
+        # do nothing for now
+        einfo 'link is at allready at full speed -> no waiting'
+    elif [ "${r_has_link}" == "0" ] ; then
+        # network is active 
+        # if the network is active the thing is at least powered on
+        # only do a wol to wake it up in case it's sleeping
+        wol -i 192.168.55.0 00:1C:25:6B:C8:77 1> /dev/null 2> /dev/null
+    else
+        # no network link
+        # full wakeup with waiting
+        wol -i 192.168.55.0 00:1C:25:6B:C8:77 1> /dev/null 2> /dev/null
+        einfo waiting 150 sec , skyscraper need some time to come up ...
+        einfo maybe skyscraper is awake now...
+        sleep 150
+    fi
+
+    check=0
+    while true;do
+      #echo -n ping
+      #echo -n .
+      ping -c1 -q skyscraper  1> /dev/null 2> /dev/null
+      r1=$?
+      #echo -n .
+      #echo -n .
+      #if [ $r1 == 0 ];then echo pong;else echo;fi
+      if [ $r1 == 0 ];then
+          level=$(ssh -o ConnectTimeout=1 root@skyscraper "rc-status -r" 2> /dev/null)
+          r2=$?
+          if [ $r2 == 0 ];then
+    		   #echo runlevel is: $level
+               #got something
+               if [ "${level}" == "default" ];then
+    		             #echo runlevel is: $level
+                         if [ "${check}" == "ok" ];then
+                                ssh root@skyscraper skyscraper_activate_monitor_onoff_button \
+                                && mark_service_started skyscraper
+                                break
+    		             fi
+                         check="ok"
+               fi
+      
+         fi
+      else
+          #no pong
+          sleep 1
+          wol -i 192.168.55.0 00:22:15:EF:03:51 1> /dev/null 2> /dev/null
+      fi
+    sleep 1
+    done
+}
+
+stop() {
+ebegin "Stopping skyscraper..."
+ssh -o ConnectTimeout=2 root@skyscraper openrc-shutdown -p now 1> /dev/null 2> /dev/null
+r0=$?
+if [ $r0 == 0 ];then
+   ## shutdown should be in progress...
+   sleep 7
+else
+   ewarn warning , first connection attempt failed
+fi
+check=0
+while true;do
+  ping -c1 -q skyscraper  1> /dev/null 2> /dev/null
+  r1=$?
+
+  sudo ethtool enp3s0u3|grep -q "Speed: 100Mb/s"
+  r2=$?
+
+  sudo ethtool enp3s0u3|grep -q "Speed: 10Mb/s"
+  r3=$?
+
+  if [ "${r1}" == "1" ] && [ "${r2}" == "0" ];then
+      if [ "${check}" == "ok" ];then
+            break
+      fi
+      check="ok"
+  elif [ "${r1}" == "1" ] && [ "${r3}" == "0" ];then
+      if [ "${check}" == "ok" ];then
+            break
+      fi
+      check="ok"
+  fi
+  ssh -o ConnectTimeout=1 root@skyscraper shutdown -h now 2> /dev/null 1> /dev/null
+  sleep 3
+done
+}
+

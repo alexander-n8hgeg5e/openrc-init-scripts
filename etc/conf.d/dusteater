@@ -1,0 +1,8 @@
+
+rc_cgroup_settings="
+io.weight 500
+"
+
+rc_cgroup_cpu="
+cpu.shares 4000
+"

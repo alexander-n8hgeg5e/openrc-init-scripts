@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+
+interfaces= {
+                'enp3s0u3' :  { 'usb_vendor_id' : '0b95','usb_dev_id': '1790'},
+                'enp5s0'   :  { 'dev_path' : '/sys/devices/pci0000:00/0000:00:1c.5/0000:05:00.0'},
+                'wlp6s0'   :  { 'dev_path' : '/sys/devices/pci0000:00/0000:00:1e.0/0000:06:00.0'},
+            }
+
+import fcntl
+import socket
+import struct
+from os import listdir,readlink
+from os.path import realpath,sep as psep,normpath,islink,basename
+from sys import exit,stderr
+
+SIOCSIFNAME=0x8923
+SYSNET_DIR="/sys/class/net"
+
+def get_net_device_sys_pathes():
+    p=[]
+    net_devices=listdir(SYSNET_DIR)
+    for nd in net_devices:
+        p.append(realpath(SYSNET_DIR+psep+nd+"/device"))
+    return p
+
+def is_pci_dev_data(data):
+    keys=data.keys()
+    return "dev_path" in keys \
+            and data["dev_path"][:16]=="/sys/devices/pci" \
+            and not any ( k in data for k in ('usb_dev_id','usb_vendor_id') )
+
+def is_usb_dev_data(data):
+    keys=data.keys()
+    return any ( k in data for k in ('usb_dev_id','usb_vendor_id') ) \
+        and not ( "dev_path" in keys and data["dev_path"][:16]=="/sys/devices/pci")
+    
+def is_usb_dev_path(p):
+    subsystem_link_path=p+"/subsystem"
+    return islink(subsystem_link_path) and basename(readlink(subsystem_link_path))=="usb"
+
+def is_pci_dev_path(p):
+    subsystem_link_path=p+"/subsystem"
+    return islink(subsystem_link_path) and basename(readlink(subsystem_link_path))=="pci"
+
+def get_netifname_from_sysdevpath(p):
+    return listdir(p+"/net")[0]
+
+def get_usb_idVendor_from_usb_dev_path(p):
+    with open(realpath(p)+"/../idVendor") as f:
+        return f.read().strip()
+
+def get_usb_idProduct_from_usb_dev_path(p):
+    with open(realpath(p)+"/../idProduct") as f:
+        return f.read().strip()
+
+def rename_if(from_name,to_name):
+    if from_name==to_name:
+        #print("ok")
+        return
+    from_name=from_name.encode(encoding="ascii")
+    to_name=to_name.encode(encoding="ascii")
+    print(b'renameing interface "'+from_name + b'" to "'+to_name,end="")
+    sk=socket.socket(family=socket.AF_INET , type=socket.SOCK_DGRAM,proto=0)
+    ifr=struct.pack("16s16s",from_name+b"\0",to_name+ b"\0" )
+    fcntl.ioctl(sk.fileno(),SIOCSIFNAME, ifr )
+    sk.close()
+
+def rename_if_from_path(sysdevpath,to_name):
+    current_name=get_netifname_from_sysdevpath(sysdevpath)
+    rename_if(current_name,to_name)
+
+
+available_device_pathes=get_net_device_sys_pathes()
+for adp in available_device_pathes:
+    #msg0=["adp=",adp]
+    for name,data in interfaces.items():
+        #msg=["name=",name]+msg0
+        # check if "interfaces" entry is meant for the path
+        if is_usb_dev_data(data) and is_usb_dev_path(adp):
+            if data["usb_vendor_id"]==get_usb_idVendor_from_usb_dev_path(adp) \
+                    and data["usb_dev_id"]==get_usb_idProduct_from_usb_dev_path(adp):
+                #print("\nusb device found:",*msg,end=" ")
+                rename_if_from_path(adp,name)
+                break
+        elif is_pci_dev_data(data) and is_pci_dev_path(adp):
+            if normpath(data["dev_path"]) == normpath(adp):
+                #print("\npci device found:",*msg,end=" ")
+                rename_if_from_path(adp,name)
+                break
+        else:
+            #print("\nskipping:",*msg)
+            #print(is_pci_dev_data(data),is_pci_dev_data and is_pci_dev_path(adp))
+            #if is_pci_dev_data(data) and is_pci_dev_path(adp):
+            #    print(normpath(data['dev_path']),normpath(adp))
+            continue
+
+
+
+
+#        #if __UAPI_DEF_IF_IFREQ
+#        struct ifreq {
+#        #define IFHWADDRLEN	6
+#        	union
+#        	{
+#        		char	ifrn_name[IFNAMSIZ];		/* if name, e.g. "en0" */
+#        	} ifr_ifrn;
+#        	
+#        	union {
+#        		struct	sockaddr ifru_addr;
+#        		struct	sockaddr ifru_dstaddr;
+#        		struct	sockaddr ifru_broadaddr;
+#        		struct	sockaddr ifru_netmask;
+#        		struct  sockaddr ifru_hwaddr;
+#        		short	ifru_flags;
+#        		int	ifru_ivalue;
+#        		int	ifru_mtu;
+#        		struct  ifmap ifru_map;
+#        		char	ifru_slave[IFNAMSIZ];	/* Just fits the size */
+#        		char	ifru_newname[IFNAMSIZ];
+#        		void *	ifru_data;
+#        		struct	if_settings ifru_settings;
+#        	} ifr_ifru;
+#        };
+
+
+# vim: set foldmethod=indent foldlevel=0 :
