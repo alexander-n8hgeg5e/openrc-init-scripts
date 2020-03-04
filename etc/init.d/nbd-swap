@@ -31,7 +31,7 @@ start()
 		   && fallocate --length "${allocate_space_k}k" /mnt/dusteater/var/tmp/esadc/esadc_swapfile \
 		   && chmod 0600 /mnt/dusteater/var/tmp/esadc/esadc_swapfile \
            && modprobe nbd \
-           && ssh root@dusteater rc-service nbd-server start \
+           && sudo -u nbd ssh de 'sudo rc-service nbd-server start' \
            && start_nbd_client \
 		   && mkswap /dev/nbd0 \
 		   && swapon /dev/nbd0 \
@@ -54,7 +54,7 @@ stop()
                 && cat /var/run/sysctl_backup.vm.watermark_scale_factor > /proc/sys/vm/watermark_scale_factor \
                 && cat /var/run/sysctl_backup.vm.swappiness > /proc/sys/vm/swappiness \
                 && nbd_free_dev nbd0 \
-                && ssh root@dusteater rc-service nbd-server stop \
+                && sudo -u nbd ssh de sudo rc-service nbd-server stop \
                 && rm -f /mnt/dusteater/var/tmp/esadc/esadc_swapfile \
 				&& umount /mnt/dusteater/var/tmp/esadc \
                 && ps --no-header -p $(cat "${pidfile}"|head -n1) && eend 1 "it seems that nbd client did not exit properly"
