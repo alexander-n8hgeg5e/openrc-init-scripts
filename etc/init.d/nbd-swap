@@ -12,7 +12,8 @@
 name="nbd-swap"
 description="mounts tmpfs over nfs , creates swap file and mount that via \"nbd\""
 
-pidfile="/var/run/$(hostname)/${RC_SVCNAME}.pid"
+pidfile_dir="/var/run/$(hostname)"
+pidfile="${pidfile_dir}/${RC_SVCNAME}.pid"
 
 depend()
 {
@@ -31,7 +32,7 @@ start()
 		   && fallocate --length "${allocate_space_k}k" /mnt/dusteater/var/tmp/esadc/esadc_swapfile \
 		   && chmod 0600 /mnt/dusteater/var/tmp/esadc/esadc_swapfile \
            && modprobe nbd \
-           && sudo -u nbd ssh de 'sudo rc-service nbd-server start' \
+           && sudo ssh root@de 'rc-service nbd-server start' \
            && start_nbd_client \
 		   && mkswap /dev/nbd0 \
 		   && swapon /dev/nbd0 \
@@ -54,7 +55,7 @@ stop()
                 && cat /var/run/sysctl_backup.vm.watermark_scale_factor > /proc/sys/vm/watermark_scale_factor \
                 && cat /var/run/sysctl_backup.vm.swappiness > /proc/sys/vm/swappiness \
                 && nbd_free_dev nbd0 \
-                && sudo -u nbd ssh de sudo rc-service nbd-server stop \
+                && sudo ssh root@de rc-service nbd-server stop \
                 && rm -f /mnt/dusteater/var/tmp/esadc/esadc_swapfile \
 				&& umount /mnt/dusteater/var/tmp/esadc \
                 && ps --no-header -p $(cat "${pidfile}"|head -n1) && eend 1 "it seems that nbd client did not exit properly"
@@ -66,6 +67,10 @@ stop()
 start_nbd_client()
 {
 		nbd_free_dev nbd0
+        [[ -d  $(realpath "${pidfile_dir}") ]] || mkdir -p "${pidfile_dir}"
+        chown -R nbd:nbd "${pidfile_dir}"
+        chmod -R ug=rwX,o= "${pidfile_dir}"
+        chmod g+s "${pidfile_dir}"
 		nbd-client -name swap -swap -persist -connections 8 dusteater 8464 /dev/nbd0
         pid=$(nbd-client -c /dev/nbd0)
     	ret=$?
