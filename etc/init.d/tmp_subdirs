@@ -10,7 +10,16 @@ need localmount
 }
 
 start() {
+    einfo "populating tmp subdirs"
 	mkdir -p /tmp/var/log
+    for node in $(cat /etc/nodelist);do
+        mkdir -p "/tmp/${node}/cache/ccache"
+        chown -R portage:portage "/tmp/${node}/cache/ccache"
+        mkdir -p "/tmp/${node}/portage"
+        chown -R portage:portage "/tmp/${node}/portage"
+        mkdir -p "/tmp/${node}/log/portage"
+        chown -R portage:portage "/tmp/${node}/log/portage"
+    done
 }
 stop(){
 	echo -n ""
