@@ -1,0 +1,23 @@
+#!/sbin/openrc-run
+# Copyright 2020 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="run_subdirs"
+description=""
+
+depend() {
+need root
+}
+
+start() {
+    einfo "populating run subdirs"
+    for node in $(cat /etc/nodelist);do
+
+        mkdir      "/run/${node}"
+        chmod 0751 "/run/${node}"
+
+    done
+}
+stop(){
+	echo -n ""
+}
