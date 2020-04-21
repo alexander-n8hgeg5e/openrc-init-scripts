@@ -12,12 +12,17 @@ need root
 start() {
     einfo "populating run subdirs"
     for node in $(cat /etc/nodelist);do
-        hostname="$(hostname)"
-        if [[ "${node}" != "${hostname}" ]];then
+        einfo "node ${node}"
+        if [[ "${node}" != "$(hostname)" ]];then
             mkdir -p   "/run/${node}"
             chmod 0751 "/run/${node}"
         else
-            ln -s "/run" "/run/%{hostname}"
+            einfo "ln -s /run /run/${node}"
+            if ! [[ -e "/run/${node}" ]];then
+                ln -s "/run" "/run/${node}"
+            elif ! [[ $( readlink  "/run/${node}" ) = "/run" ]];then
+                eerror "ERROR: Path \""/run/${node}"\" exists an is not a symlink pointing at \"/run\"."
+            fi
         fi
     done
 

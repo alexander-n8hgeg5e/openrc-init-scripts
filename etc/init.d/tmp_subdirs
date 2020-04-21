@@ -14,9 +14,7 @@ start() {
 	mkdir -p /tmp/var/log
     for node in $(cat /etc/nodelist);do
 
-        hostname="$(hostname)"
-
-        if [[ "${node}" != "${hostname}" ]];then
+        if [[ "${node}" != "$(hostname)" ]];then
             tmpdir="/tmp/${node}"
         else
             tmpdir="/tmp"
@@ -25,7 +23,7 @@ start() {
             elif [[ -e /tmp ]];then
                 einfo "Existing link at /tmp is valid."
             else
-                ln -s "/tmp/${node}" "/tmp"    
+                ln -s "/tmp/${node}" "/tmp" 
             fi
         fi
 
