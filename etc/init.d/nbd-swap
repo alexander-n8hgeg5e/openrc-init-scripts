@@ -10,7 +10,7 @@
 # except according to the terms contained in the LICENSE file.
 
 name="nbd-swap"
-description="mounts tmpfs over nfs , creates swap file and mount that via \"nbd\""
+description="mounts tmpfs over nfs , creates a remote swap file and mounts it with \"nbd\""
 
 pidfile_dir="/var/run/$(hostname)"
 pidfile="${pidfile_dir}/${RC_SVCNAME}.pid"
@@ -26,23 +26,28 @@ start()
 {
 	        ebegin "Activating ${RC_SVCNAME} ... "
 		    mount /mnt/dusteater/var/tmp/esadc \
-            && free_space_k="$(df -h -Bk --output=avail /mnt/dusteater/var/tmp/esadc/|tail -n+2|head -n1|sed 's/[^0-9]//g')" \
+            && free_space_k="$(\
+                                df -h -Bk --output=avail /mnt/dusteater/var/tmp/esadc/|\
+                                tail -n+2|\
+                                head -n1|\
+                                sed 's/[^0-9]//g'\
+                              )"\
             && allocate_space_k=$(( $free_space_k - 1000 )) \
             &&[[ $allocate_space_k -gt 0 ]] \
-		   && fallocate --length "${allocate_space_k}k" /mnt/dusteater/var/tmp/esadc/esadc_swapfile \
-		   && chmod 0600 /mnt/dusteater/var/tmp/esadc/esadc_swapfile \
-           && modprobe nbd \
-           && sudo ssh root@de 'rc-service nbd-server start' \
-           && start_nbd_client \
-		   && mkswap /dev/nbd0 \
-		   && swapon /dev/nbd0 \
+		    && fallocate --length "${allocate_space_k}k" /mnt/dusteater/var/tmp/esadc/esadc_swapfile \
+		    && chmod 0600 /mnt/dusteater/var/tmp/esadc/esadc_swapfile \
+            && modprobe nbd \
+            && sudo ssh root@de 'rc-service nbd-server start' \
+            && start_nbd_client \
+		    && mkswap /dev/nbd0 \
+		    && swapon /dev/nbd0 \
             && cat /proc/sys/vm/overcommit_ratio > /var/run/sysctl_backup.vm.overcommit_ratio \
-           && echo 50 > /proc/sys/vm/overcommit_ratio \
+            && echo 50 > /proc/sys/vm/overcommit_ratio \
             && cat /proc/sys/vm/watermark_scale_factor > /var/run/sysctl_backup.vm.watermark_scale_factor \
-           && echo 1000 > /proc/sys/vm/watermark_scale_factor \
+            && echo 1000 > /proc/sys/vm/watermark_scale_factor \
             && cat /proc/sys/vm/swappiness > /var/run/sysctl_backup.vm.swappiness \
-           && echo 100 > /proc/sys/vm/swappiness \
-           && echo -n
+            && echo 100 > /proc/sys/vm/swappiness \
+            && echo -n
 	# eend 0 # If swapon has nothing todo it errors, so always return 0
     # but should have something to do
 }

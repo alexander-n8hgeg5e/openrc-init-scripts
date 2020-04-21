@@ -48,6 +48,7 @@ src_install(){
 	insinto "${etc_confd_dir}"
 	doins "${etc_confd_dir}/nfs-swap"
 	doins "${etc_confd_dir}/dusteater"
+	doins "${etc_confd_dir}/bootmisc"
 
 	rel_inst_path="usr/sbin"
 	for username in skyscraper dusteater ;do

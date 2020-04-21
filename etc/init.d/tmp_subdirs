@@ -6,7 +6,7 @@ name="tmp_subdirs"
 description=""
 
 depend() {
-need localmount
+need localmount run_subdirs
 }
 
 start() {
@@ -14,23 +14,31 @@ start() {
 	mkdir -p /tmp/var/log
     for node in $(cat /etc/nodelist);do
 
-        mkdir      "/tmp/${node}"
-        chmod 1777 "/tmp/${node}"
+        hostname="$(hostname)"
 
-        mkdir      "/tmp/${node}/cache"
-        chmod 0751 "/tmp/${node}/cache"
+        if [[ "${node}" != "${hostname}" ]];then
+            tmpdir="/tmp/${node}"
+        else
+            tmpdir="/tmp"
+        fi
 
-        mkdir                    "/tmp/${node}/cache/ccache"
-        chown -R portage:portage "/tmp/${node}/cache/ccache"
+        mkdir      "${tmpdir}"
+        chmod 1777 "${tmpdir}"
 
-        mkdir                    "/tmp/${node}/portage"
-        chown -R portage:portage "/tmp/${node}/portage"
+        mkdir      "${tmpdir}/cache"
+        chmod 0751 "${tmpdir}/cache"
 
-        mkdir                    "/tmp/${node}/log"
-        chmod 0751               "/tmp/${node}/log"
+        mkdir                    "${tmpdir}/cache/ccache"
+        chown -R portage:portage "${tmpdir}/cache/ccache"
 
-        mkdir                    "/tmp/${node}/log/portage"
-        chown -R portage:portage "/tmp/${node}/log/portage"
+        mkdir                    "${tmpdir}/portage"
+        chown -R portage:portage "${tmpdir}/portage"
+
+        mkdir                    "${tmpdir}/log"
+        chmod 0751               "${tmpdir}/log"
+
+        mkdir                    "${tmpdir}/log/portage"
+        chown -R portage:portage "${tmpdir}/log/portage"
 
     done
 }

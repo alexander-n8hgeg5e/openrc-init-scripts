@@ -12,11 +12,17 @@ need root
 start() {
     einfo "populating run subdirs"
     for node in $(cat /etc/nodelist);do
-
-        mkdir      "/run/${node}"
-        chmod 0751 "/run/${node}"
-
+        hostname="$(hostname)"
+        if [[ "${node}" != "${hostname}" ]];then
+            mkdir      "/run/${node}"
+            chmod 0751 "/run/${node}"
+        else
+            ln -s "/run" "/run/%{hostname}"
+        fi
     done
+
+    mkdir "/run/tmp"
+    chmod 1777 "/run/tmp"
 }
 stop(){
 	echo -n ""
