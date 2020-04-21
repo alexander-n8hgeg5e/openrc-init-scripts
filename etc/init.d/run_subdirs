@@ -14,14 +14,14 @@ start() {
     for node in $(cat /etc/nodelist);do
         hostname="$(hostname)"
         if [[ "${node}" != "${hostname}" ]];then
-            mkdir      "/run/${node}"
+            mkdir -p   "/run/${node}"
             chmod 0751 "/run/${node}"
         else
             ln -s "/run" "/run/%{hostname}"
         fi
     done
 
-    mkdir "/run/tmp"
+    mkdir -p   "/run/tmp"
     chmod 1777 "/run/tmp"
 }
 stop(){

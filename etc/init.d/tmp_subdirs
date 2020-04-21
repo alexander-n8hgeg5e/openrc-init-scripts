@@ -23,22 +23,22 @@ start() {
             ln -s "/tmp/${node}" "/tmp"
         fi
 
-        mkdir      "${tmpdir}"
+        mkdir -p   "${tmpdir}"
         chmod 1777 "${tmpdir}"
 
-        mkdir      "${tmpdir}/cache"
+        mkdir -p   "${tmpdir}/cache"
         chmod 0751 "${tmpdir}/cache"
 
-        mkdir                    "${tmpdir}/cache/ccache"
+        mkdir -p                 "${tmpdir}/cache/ccache"
         chown -R portage:portage "${tmpdir}/cache/ccache"
 
-        mkdir                    "${tmpdir}/portage"
+        mkdir -p                 "${tmpdir}/portage"
         chown -R portage:portage "${tmpdir}/portage"
 
-        mkdir                    "${tmpdir}/log"
+        mkdir -p                 "${tmpdir}/log"
         chmod 0751               "${tmpdir}/log"
 
-        mkdir                    "${tmpdir}/log/portage"
+        mkdir -p                 "${tmpdir}/log/portage"
         chown -R portage:portage "${tmpdir}/log/portage"
 
     done
