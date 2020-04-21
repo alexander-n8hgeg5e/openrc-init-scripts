@@ -20,7 +20,13 @@ start() {
             tmpdir="/tmp/${node}"
         else
             tmpdir="/tmp"
-            ln -s "/tmp/${node}" "/tmp"
+            if [[ -e /tmp ]] && [[ "$(readlink /tmp)" != "/tmp/${node}" ]];then
+                eerror "ERROR: Existing path \"/tmp\" is not a symlink to \"/tmp/${node}\". Expecting nothing or the symlink there."
+            elif [[ -e /tmp ]];then
+                einfo "Existing link at /tmp is valid."
+            else
+                ln -s "/tmp/${node}" "/tmp"    
+            fi
         fi
 
         mkdir -p   "${tmpdir}"
