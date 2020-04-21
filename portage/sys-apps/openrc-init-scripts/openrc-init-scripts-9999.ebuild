@@ -23,16 +23,12 @@ src_install(){
 	hostname="$(hostname)"
 	mkdir "${S}/run"
 	mkdir "${S}/var/run"
-	mkdir "${S}/var/run/${hostname}"
 	keepdir "run"
 	keepdir "var/run"
-	keepdir "var/run/${hostname}"
 	fperms 1770 "/run"
 	fperms 1770 "/var/run"
-	fperms 1770 "/var/run/${hostname}"
 	fowners root:daemon "/run"
 	fowners root:daemon "/var/run"
-	fowners root:root   "/var/run/${hostname}"
 	doinitd etc/init.d/nfs-swap
 	doinitd etc/init.d/nfs-tmp
 	doinitd etc/init.d/nbd-swap
