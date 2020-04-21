@@ -3,7 +3,7 @@
 # Distributed under the terms of the GNU General Public License v2
 
 name="run_subdirs"
-description=""
+description="population subdirs and stuff inside of /run"
 
 depend() {
 need root

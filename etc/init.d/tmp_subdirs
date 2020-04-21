@@ -18,12 +18,15 @@ start() {
             tmpdir="/tmp/${node}"
         else
             tmpdir="/tmp"
-            if ! [[ -e /tmp ]];then
-                ln -s "/tmp/${node}" "/tmp" 
-            elif [[ "$(readlink /tmp)" != "/tmp/${node}" ]]
-                eerror "ERROR: Existing path \"/tmp\" is not a symlink to \"/tmp/${node}\". Expecting nothing or the symlink there."
+            
+            linkname="${tmpdir}/${node}"
+            linktarget="${tmpdir}"
+            if ! [[ -e "${linkname}" ]];then
+                ln -s  "${linktarget}" "${linkname}" 
+            elif [[ "$(readlink ${linkname})" != "${linktarget}" ]];then
+                eerror "ERROR: Existing path \"${linkname}\" is not a symlink to \"${linktarget}\". Expecting nothing or the symlink there."
             else
-                einfo "Existing link at /tmp is valid."
+                einfo "Existing link at ${linkname} is valid."
             fi
         fi
 
