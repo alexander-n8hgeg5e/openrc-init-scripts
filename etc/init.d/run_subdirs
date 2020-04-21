@@ -13,15 +13,20 @@ start() {
     einfo "populating run subdirs"
     for node in $(cat /etc/nodelist);do
         einfo "node ${node}"
+
         if [[ "${node}" != "$(hostname)" ]];then
             mkdir -p   "/run/${node}"
             chmod 0751 "/run/${node}"
         else
-            einfo "ln -s /run /run/${node}"
-            if ! [[ -e "/run/${node}" ]];then
-                ln -s "/run" "/run/${node}"
-            elif ! [[ $( readlink  "/run/${node}" ) = "/run" ]];then
-                eerror "ERROR: Path \""/run/${node}"\" exists an is not a symlink pointing at \"/run\"."
+            #    ln -s "/run" "/run/${node}"
+            linkname="/run/${node}"
+            linktarget="/run"
+            if ! [[ -e "${linkname}" ]];then
+                ln -s  "${linktarget}" "${linkname}" 
+            elif [[ "$(readlink ${linkname})" != "${linktarget}" ]];then
+                eerror "ERROR: Existing path \"${linkname}\" is not a symlink to \"${linktarget}\". Expecting nothing or the symlink there."
+            else
+                einfo "Existing link at ${linkname} is valid."
             fi
         fi
     done

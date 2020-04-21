@@ -13,6 +13,7 @@ start() {
     einfo "populating tmp subdirs"
 
     for node in $(cat /etc/nodelist);do
+        einfo "node ${node}"
 
         if [[ "${node}" != "$(hostname)" ]];then
             tmpdir="/tmp/${node}"
