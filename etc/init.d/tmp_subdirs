@@ -11,19 +11,19 @@ need localmount run_subdirs
 
 start() {
     einfo "populating tmp subdirs"
-	mkdir -p /tmp/var/log
+
     for node in $(cat /etc/nodelist);do
 
         if [[ "${node}" != "$(hostname)" ]];then
             tmpdir="/tmp/${node}"
         else
             tmpdir="/tmp"
-            if [[ -e /tmp ]] && [[ "$(readlink /tmp)" != "/tmp/${node}" ]];then
-                eerror "ERROR: Existing path \"/tmp\" is not a symlink to \"/tmp/${node}\". Expecting nothing or the symlink there."
-            elif [[ -e /tmp ]];then
-                einfo "Existing link at /tmp is valid."
-            else
+            if ! [[ -e /tmp ]];then
                 ln -s "/tmp/${node}" "/tmp" 
+            elif [[ "$(readlink /tmp)" != "/tmp/${node}" ]]
+                eerror "ERROR: Existing path \"/tmp\" is not a symlink to \"/tmp/${node}\". Expecting nothing or the symlink there."
+            else
+                einfo "Existing link at /tmp is valid."
             fi
         fi
 
