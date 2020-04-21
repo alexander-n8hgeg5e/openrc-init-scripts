@@ -20,6 +20,7 @@ start() {
             tmpdir="/tmp/${node}"
         else
             tmpdir="/tmp"
+            ln -s "/tmp/${node}" "/tmp"
         fi
 
         mkdir      "${tmpdir}"
