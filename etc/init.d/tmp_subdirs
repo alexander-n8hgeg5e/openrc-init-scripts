@@ -21,7 +21,7 @@ start() {
             tmpdir="/tmp"
             
             linkname="${tmpdir}/${node}"
-            linktarget="${tmpdir}"
+            linktarget="."
             if ! [[ -e "${linkname}" ]];then
                 ln -s  "${linktarget}" "${linkname}" 
             elif [[ "$(readlink ${linkname})" != "${linktarget}" ]];then

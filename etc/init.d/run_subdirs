@@ -18,9 +18,9 @@ start() {
             mkdir -p   "/run/${node}"
             chmod 0751 "/run/${node}"
         else
-            #    ln -s "/run" "/run/${node}"
+            # ln -s "." "/run/${node}"
             linkname="/run/${node}"
-            linktarget="/run"
+            linktarget="."
             if ! [[ -e "${linkname}" ]];then
                 ln -s  "${linktarget}" "${linkname}" 
             elif [[ "$(readlink ${linkname})" != "${linktarget}" ]];then
