@@ -14,6 +14,10 @@ description="mounts tmpfs over nfs , creates a remote swap file and mounts it wi
 
 pidfile_dir="/var/run/$(hostname)"
 pidfile="${pidfile_dir}/${RC_SVCNAME}.pid"
+remote_run_dir="/run/dusteater"
+swapfilepath="${remote_run_dir}/$(hostname)/$(hostname)_swapfile"
+max_allocate_space=10485760
+min_allocate_space=12400
 
 depend()
 {
@@ -24,18 +28,25 @@ depend()
 
 start()
 {
-	        ebegin "Activating ${RC_SVCNAME} ... "
-		    mount /mnt/dusteater/var/tmp/esadc \
+	        ebegin "Activating ${RC_SVCNAME}"
+		    mount "${remote_run_dir}" \
             && free_space_k="$(\
-                                df -h -Bk --output=avail /mnt/dusteater/var/tmp/esadc/|\
+                                df -h -Bk --output=avail "${remote_run_dir}"|\
                                 tail -n+2|\
                                 head -n1|\
                                 sed 's/[^0-9]//g'\
                               )"\
-            && allocate_space_k=$(( $free_space_k - 1000 )) \
-            &&[[ $allocate_space_k -gt 0 ]] \
-		    && fallocate --length "${allocate_space_k}k" /mnt/dusteater/var/tmp/esadc/esadc_swapfile \
-		    && chmod 0600 /mnt/dusteater/var/tmp/esadc/esadc_swapfile \
+            || free_space_k="-1"
+            if [[ ${free_space_k} -gt ${max_allocate_space} ]];then
+                allocate_space_k="${max_allocate_space}"
+            elif [[ ${free_space_k} -ge "${min_allocate_space}" ]];then
+                allocate_space_k="${free_space_k}"
+            else
+                allocate_space_k="-1"
+            fi
+            [[ $allocate_space_k -gt 0 ]] \
+            && einfo "swap space = $(( ${allocate_space_k}/1024 )) Mib" \
+		    && fallocate --length "$(( ${allocate_space_k} * 1024 ))" "${swapfilepath}" \
             && modprobe nbd \
             && sudo ssh root@de 'rc-service nbd-server start' \
             && start_nbd_client \
@@ -47,35 +58,35 @@ start()
             && echo 1000 > /proc/sys/vm/watermark_scale_factor \
             && cat /proc/sys/vm/swappiness > /var/run/sysctl_backup.vm.swappiness \
             && echo 100 > /proc/sys/vm/swappiness \
-            && echo -n
+            && eend 0
 	# eend 0 # If swapon has nothing todo it errors, so always return 0
-    # but should have something to do
+		    #&& chmod 0700 "${swapfilepath}" \
 }
 
 stop()
 {
-	ebegin "Deactivating ${RC_SVCNAME} ..."
-		     	swapoff /dev/nbd0 \
-                && cat /var/run/sysctl_backup.vm.overcommit_ratio > /proc/sys/vm/overcommit_ratio \
-                && cat /var/run/sysctl_backup.vm.watermark_scale_factor > /proc/sys/vm/watermark_scale_factor \
-                && cat /var/run/sysctl_backup.vm.swappiness > /proc/sys/vm/swappiness \
-                && nbd_free_dev nbd0 \
-                && sudo ssh root@de rc-service nbd-server stop \
-                && rm -f /mnt/dusteater/var/tmp/esadc/esadc_swapfile \
-				&& umount /mnt/dusteater/var/tmp/esadc \
-                && ps --no-header -p $(cat "${pidfile}"|head -n1) && eend 1 "it seems that nbd client did not exit properly"
-                pfc=$(cat ${pidfile}|tail -n+1) \
-                &&echo ${pfc} > ${pidfile}
-	eend 0
+	ebegin "Deactivating ${RC_SVCNAME}"
+	swapoff /dev/nbd0 \
+    && cat /var/run/sysctl_backup.vm.overcommit_ratio > /proc/sys/vm/overcommit_ratio \
+    && cat /var/run/sysctl_backup.vm.watermark_scale_factor > /proc/sys/vm/watermark_scale_factor \
+    && cat /var/run/sysctl_backup.vm.swappiness > /proc/sys/vm/swappiness \
+    && nbd_free_dev nbd0 \
+    && sudo ssh root@de rc-service nbd-server stop \
+    && rm -f "${swapfilepath}" \
+	&& umount "${remote_run_dir}" \
+    && ps --no-header -p $(cat "${pidfile}"|head -n1) && eend 1 "it seems that nbd client did not exit properly"
+    pfc="$(cat ${pidfile}|tail -n+1)" \
+    && echo "${pfc}" > "${pidfile}" \
+	&& eend 0
 }
 
 start_nbd_client()
 {
 		nbd_free_dev nbd0
         [[ -d  $(realpath "${pidfile_dir}") ]] || mkdir -p "${pidfile_dir}"
-        chown -R nbd:nbd "${pidfile_dir}"
-        chmod -R ug=rwX,o= "${pidfile_dir}"
-        chmod g+s "${pidfile_dir}"
+        #chown -R nbd:nbd "${pidfile_dir}"
+        #chmod -R ug=rwX,o= "${pidfile_dir}"
+        #chmod g+s "${pidfile_dir}"
 		nbd-client -name swap -swap -persist -connections 8 dusteater 8464 /dev/nbd0
         pid=$(nbd-client -c /dev/nbd0)
     	ret=$?
@@ -88,8 +99,8 @@ start_nbd_client()
 
 nbd_free_dev()
 {
-    einfo freeing device
+    einfo "freeing nbd device ${1}"
     nbd-client -d /dev/${1}
-    [[ $? -ne 2 ]] && eend 0 "/dev/${1} free"
-    einfo "device ${1} clear"
+    [[ $? -ne 2 ]] \
+    && eend 0 "/dev/${1} free"
 }
