@@ -6,7 +6,7 @@ name="tmp_subdirs"
 description=""
 
 depend() {
-need localmount run_subdirs
+need localmount run_subdirs tmp_backing
 }
 
 start() {

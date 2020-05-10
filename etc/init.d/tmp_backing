@@ -1,0 +1,106 @@
+#!/sbin/openrc-run
+# Copyright 2020 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="tmp_backing"
+description="prepares the blockdev for tmp and mounts the filesystem"
+tmp_img_file="/run/tmp.img"
+
+depend() {
+need localmount run_subdirs
+}
+
+get_loopdev_path() {
+    losetup -all --noheadings -O back-file|grep -Eq "^${tmp_img_file}$" \
+    || losetup -f "${tmp_img_file}"
+    loopdev_path=$(losetup --noheadings -O name,back-file \
+        | grep --color=never -E "^[/]dev[/]loop[0-9]+[ ]+${tmp_img_file}" \
+        | cut -d' ' -f1)
+    echo "${loopdev_path}"
+}
+
+get_memtotal_mb() {
+    echo $(( $( cat /proc/meminfo \
+    | grep -E '^MemTotal' \
+    | sed -E 's/^MemTotal[:][ ]*([1-9][0-9]*.*)$/\1/' \
+    | sed -E 's@kb@*1024@I' \
+    | sed -E 's@mb@*1024*1024@I' \
+    | sed -E 's@gb@*1024*1024*1024@I' ) \
+    /1024 /1024 ))
+}
+
+get_fs_free_mb() {
+    df --output=avail -Bm /run \
+    | tail -n+2 \
+    | sed -E 's/^[ ]*([0-9]+)M/\1/I'
+}
+
+get_size_mb(){
+    memtotal=$(get_memtotal_mb)
+    minsize=$(( $memtotal / 10 ))
+    maxsize=$(( $memtotal / 2  ))
+    maxsize2=$(( 1000 * $(get_fs_free_mb) / 900 ))
+    [[ $maxsize2 -lt $maxsize ]] && maxsize=$maxsize2
+
+    if [[ $minsize -ge 1024 ]];then
+        if  [[ $minsize -lt 6144 ]];then
+            # formular
+            echo $(( (1000 * ($minsize-1024) / 5120 * ($maxsize-$minsize) + 1000*$minsize)/1000 ))
+        else
+            echo $maxsize
+        fi
+    else
+        echo $minsize
+    fi
+}   
+
+start() {
+    ebegin "preparing \"/tmp\""
+    ebegin "preparing blockdev for \"/tmp\""
+    if [[ -z "${tmp_img_size_mb}" ]];then
+        tmp_img_size_mb=$(get_size_mb)
+        einfo "img size = ${tmp_img_size_mb} Mib"
+    fi
+    seek=$(( "${tmp_img_size_mb}" - 1 ))
+    if ! [[ -e "${tmp_img_file}" ]] ;then
+        was_no_img_file=1
+        dd if=/dev/zero of="${tmp_img_file}" bs=1M seek="${seek}" count=1 status=none \
+        && eend 0 \
+        || eend 1 || return
+    else
+        was_no_img_file=0
+        [[ -f "${tmp_img_file}" ]] || eend 1 "ERROR: existing non-regular file at: \"${tmp_img_file}\"" || return
+    fi
+        
+    # at this point, there should be a img file
+    # do losetup only if not allready has a loop device
+    loopdev_path=$(get_loopdev_path)
+    einfo "loopdev path = \"${loopdev_path}\""
+
+    # generate only if there had been no img file
+    if [[ "${was_no_img_file}" -eq 1 ]];then
+        mkfs.btrfs --data single --metadata single "${loopdev_path}"
+    else
+        ewarn "Expecting file \"${tmp_img_file}\" to contain a valid filesystem."
+    fi
+
+    # mounting
+    mount -o compress-force=zstd,noatime "${loopdev_path}" /run/tmp
+}
+
+stop() {
+    ebegin "stopping tmp_backing"
+    if ! umount /run/tmp ;then
+        ewarn "doing layzy umount of /run/tmp"
+        umount -l /run/tmp || eend 1 "umount failed" || return
+    fi
+    losetup -d $(get_loopdev_path) || ewarn "error during loopdev stopping"
+    if ! rm "${tmp_img_file}";then
+        if [[ -e "${tmp_img_file}" ]];then
+            eend 1 "could not remove img file: \"$tmp_img_file\""
+            return
+        else
+            ewarn "something went wrong"
+        fi
+    fi
+}

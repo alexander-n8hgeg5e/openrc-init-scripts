@@ -1,0 +1,14 @@
+#!/bin/bash
+
+sudo dd if=/dev/zero of=/var/run/tmp.img bs=1M seek=599 count=1
+
+#sudo losetup /dev/loop0 /var/run/tmp.img
+sudo losetup -f /var/run/tmp.img
+loopdev_path=$(sudo losetup --noheadings -O name,back-file|grep --color=never -E '^[/]dev[/]loop[0-9]+[ ]+[/]run[/]tmp[.]img'|cut -d' ' -f1)
+sudo mkfs.btrfs \
+    --data single \
+    --metadata single \ 
+    "${loopdev_path}"
+
+#sudo mount -o compress-force=zstd,noatime "${loopdev_path}" /mnt/1
+#sudo rsync -aiv /tmp/ /mnt/1/
