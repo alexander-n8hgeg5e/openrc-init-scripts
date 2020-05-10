@@ -102,4 +102,7 @@ ssh -o ConnectTimeout=1 root@dusteater shutdown -h now 2> /dev/null 1> /dev/null
 sleep 3
 done
 rf 210
+# in case of instant restart
+# need cooldown
+sleep 3
 }
