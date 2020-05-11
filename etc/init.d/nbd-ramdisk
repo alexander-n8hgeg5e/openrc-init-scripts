@@ -15,7 +15,7 @@ description="mounts tmpfs over nfs , creates a remote file and makes it availabl
 pidfile_dir="/var/run/$(hostname)"
 pidfile="${pidfile_dir}/${RC_SVCNAME}.pid"
 remote_run_dir="/run/dusteater"
-imgfilepath="${remote_run_dir}/export_$(hostname).img"
+imgfilepath="${remote_run_dir}/export_$(hostname)_${RC_SVCNAME}.img"
 max_allocate_space=10485760
 min_allocate_space=12400
 
@@ -56,7 +56,7 @@ start()
 stop()
 {
 	ebegin "Deactivating ${RC_SVCNAME}"
-    nbd_free_dev nbd0 \
+    nbd_free_dev "/dev/nbd${RC_SVCNAME: -1:1}" \
     && sudo ssh root@de rc-service nbd-server stop \
     && rm -f "${imgfilepath}" \
 	&& umount "${remote_run_dir}" \
@@ -68,13 +68,13 @@ stop()
 
 start_nbd_client()
 {
-		nbd_free_dev nbd0
+		nbd_free_dev "/dev/nbd${RC_SVCNAME: -1:1}"
         [[ -d  $(realpath "${pidfile_dir}") ]] || mkdir -p "${pidfile_dir}"
         #chown -R nbd:nbd "${pidfile_dir}"
         #chmod -R ug=rwX,o= "${pidfile_dir}"
         #chmod g+s "${pidfile_dir}"
-		nbd-client -name nbd-ramdisk -swap -persist -connections 8 dusteater 8464 /dev/nbd0
-        pid=$(nbd-client -c /dev/nbd0)
+		nbd-client -name "${RC_SVCNAME}" -swap -persist -connections 8 dusteater 8464 "/dev/nbd${RC_SVCNAME: -1:1}"
+        pid=$(nbd-client -c "/dev/nbd${RC_SVCNAME: -1:1}")
     	ret=$?
     	if [[ $ret -eq 0 ]];then
             echo ${pid} >> ${pidfile}

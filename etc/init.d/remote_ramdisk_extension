@@ -6,7 +6,7 @@ name="remote_ramdisk_extension"
 description="adds remote ramdisk to local filesystem"
 
 depend() {
-need nbd-ramdisk
+need nbd-ramdisk-0
 }
 
 start() {
