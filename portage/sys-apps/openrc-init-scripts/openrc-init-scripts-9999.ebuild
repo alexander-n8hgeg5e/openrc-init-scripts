@@ -65,4 +65,5 @@ src_install(){
 	doinitd etc/init.d/tmp_backing_remote
 	doinitd etc/init.d/tmp_subdirs
 	doinitd etc/init.d/nbd-ramdisk
+	doinitd etc/init.d/remote_ramdisk_extension
 }
