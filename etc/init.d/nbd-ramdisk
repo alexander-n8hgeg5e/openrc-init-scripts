@@ -1,0 +1,92 @@
+#!/sbin/openrc-run
+# Copyright (c) 2007-2015 The OpenRC Authors.
+# See the Authors file at the top-level directory of this distribution and
+# https://github.com/OpenRC/openrc/blob/master/AUTHORS
+#
+# This file is part of OpenRC. It is subject to the license terms in
+# the LICENSE file found in the top-level directory of this
+# distribution and at https://github.com/OpenRC/openrc/blob/master/LICENSE
+# This file may not be copied, modified, propagated, or distributed
+# except according to the terms contained in the LICENSE file.
+
+name="nbd-ramdisk"
+description="mounts tmpfs over nfs , creates a remote file and makes it available with \"nbd\""
+
+pidfile_dir="/var/run/$(hostname)"
+pidfile="${pidfile_dir}/${RC_SVCNAME}.pid"
+remote_run_dir="/run/dusteater"
+imgfilepath="${remote_run_dir}/export_$(hostname).img"
+max_allocate_space=10485760
+min_allocate_space=12400
+
+depend()
+{
+    need dusteater net.dusteater iptables ip6tables
+	after clock root
+	keyword -docker -jail -lxc -openvz -prefix -systemd-nspawn -vserver
+}
+
+start()
+{
+	        ebegin "Activating ${RC_SVCNAME}"
+		    mount "${remote_run_dir}" \
+            && free_space_k="$(\
+                                df -h -Bk --output=avail "${remote_run_dir}"|\
+                                tail -n+2|\
+                                head -n1|\
+                                sed 's/[^0-9]//g'\
+                              )"\
+            || free_space_k="-1"
+            if [[ ${free_space_k} -gt ${max_allocate_space} ]];then
+                allocate_space_k="${max_allocate_space}"
+            elif [[ ${free_space_k} -ge "${min_allocate_space}" ]];then
+                allocate_space_k="${free_space_k}"
+            else
+                allocate_space_k="-1"
+            fi
+            [[ $allocate_space_k -gt 0 ]] \
+            && einfo "swap space = $(( ${allocate_space_k}/1024 )) Mib" \
+		    && fallocate --length "$(( ${allocate_space_k} * 1024 ))" "${imgfilepath}" \
+            && modprobe nbd \
+            && sudo ssh root@de 'rc-service nbd-server start' \
+            && start_nbd_client \
+            && eend 0
+}
+
+stop()
+{
+	ebegin "Deactivating ${RC_SVCNAME}"
+    nbd_free_dev nbd0 \
+    && sudo ssh root@de rc-service nbd-server stop \
+    && rm -f "${imgfilepath}" \
+	&& umount "${remote_run_dir}" \
+    && ps --no-header -p $(cat "${pidfile}"|head -n1) && eend 1 "it seems that nbd client did not exit properly"
+    pfc="$(cat ${pidfile}|tail -n+1)" \
+    && echo "${pfc}" > "${pidfile}" \
+	&& eend 0
+}
+
+start_nbd_client()
+{
+		nbd_free_dev nbd0
+        [[ -d  $(realpath "${pidfile_dir}") ]] || mkdir -p "${pidfile_dir}"
+        #chown -R nbd:nbd "${pidfile_dir}"
+        #chmod -R ug=rwX,o= "${pidfile_dir}"
+        #chmod g+s "${pidfile_dir}"
+		nbd-client -name nbd-ramdisk -swap -persist -connections 8 dusteater 8464 /dev/nbd0
+        pid=$(nbd-client -c /dev/nbd0)
+    	ret=$?
+    	if [[ $ret -eq 0 ]];then
+            echo ${pid} >> ${pidfile}
+    	else
+        	eend 1 "failed to start ${RC_SVCNAME}"
+    	fi
+}
+
+nbd_free_dev()
+{
+    einfo "freeing nbd device ${1}"
+    nbd-client -d /dev/${1}
+    [[ $? -ne 2 ]] \
+    && eend 0 "/dev/${1} free"
+}
