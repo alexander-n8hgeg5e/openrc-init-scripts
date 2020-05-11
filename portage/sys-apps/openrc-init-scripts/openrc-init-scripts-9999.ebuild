@@ -61,7 +61,8 @@ src_install(){
 	doinitd etc/init.d/cg_bg
 	dosbin usr/sbin/gen_io_lat_strings
 	doinitd etc/init.d/run_subdirs
-	doinitd etc/init.d/tmp_backing
+	doinitd etc/init.d/tmp_backing_local
+	doinitd etc/init.d/tmp_backing_remote
 	doinitd etc/init.d/tmp_subdirs
 	doinitd etc/init.d/nbd-ramdisk
 }

@@ -2,12 +2,13 @@
 # Copyright 2020 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-name="tmp_backing"
+name="tmp_backing_local"
 description="prepares the blockdev for tmp and mounts the filesystem"
 tmp_img_file="/run/tmp.img"
 
 depend() {
-need localmount run_subdirs
+need localmount run_subdirs !tmp_backing_remote
+provide tmp_backing
 }
 
 get_loopdev_path() {

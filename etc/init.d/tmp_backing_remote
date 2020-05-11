@@ -1,0 +1,31 @@
+#!/sbin/openrc-run
+# Copyright 2020 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="tmp_backing_remote"
+description="mounts the remote filesystem"
+backing_node=esadc
+
+depend() {
+need localmount run_subdirs !tmp_backing_local
+provide tmp_backing
+}
+
+start() {
+    mount /run/esadc
+    mount -o bind /run/esadc/tmp /tmp
+}
+
+umount_lazy_warn() {
+    if ! umount ${1} ;then
+        ewarn "doing layzy umount of \"${1}\""
+        umount -l ${1} || eerror "umount of \"${1}\" failed"
+    fi
+}
+
+stop() {
+    ebegin "stopping tmp_backing"
+    umount_lazy_warn "/tmp"                    || eend 1 || return
+    umount_lazy_warn "/run/${backing_node}"    || eend 1 || return
+    eend 0
+}
