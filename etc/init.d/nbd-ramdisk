@@ -45,7 +45,7 @@ start()
                 allocate_space_k="-1"
             fi
             [[ $allocate_space_k -gt 0 ]] \
-            && einfo "swap space = $(( ${allocate_space_k}/1024 )) Mib" \
+            && einfo "space = $(( ${allocate_space_k}/1024 )) Mib" \
 		    && fallocate --length "$(( ${allocate_space_k} * 1024 ))" "${imgfilepath}" \
             && modprobe nbd \
             && sudo ssh root@de 'rc-service nbd-server start' \

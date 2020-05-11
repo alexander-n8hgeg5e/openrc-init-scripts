@@ -88,6 +88,7 @@ start() {
     # mounting
     mount -o compress-force=zstd,noatime "${loopdev_path}" /run/tmp
     [[ $? -eq 32 ]] && eend 0
+    && mount -o bind /run/tmp /exports/run/tmp
 }
 
 stop() {
