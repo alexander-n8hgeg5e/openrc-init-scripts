@@ -12,8 +12,10 @@ provide tmp_backing
 }
 
 start() {
-    mount /run/esadc
-    mount -o bind /run/esadc/tmp /tmp
+    mount /run/esadc \
+    || [[ $? -eq 32 ]] && eend 0
+    mount -o bind /run/esadc/tmp /tmp \
+    || [[ $? -eq 32 ]] && eend 0
 }
 
 umount_lazy_warn() {
