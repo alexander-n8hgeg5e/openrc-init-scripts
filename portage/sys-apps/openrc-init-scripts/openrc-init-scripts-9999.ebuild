@@ -50,9 +50,9 @@ src_install(){
 	for username in skyscraper dusteater ;do
 		name="in_tftpd_${username}"
 		dosym "in_tftpd_node" "etc/init.d/${name}"
-		if ! use_if_iuse "tftpd_fcap_users_${username}";then
-			dosym "in.tftpd" "${rel_inst_path}/${name}"
-		fi
+		#if ! use_if_iuse "tftpd_fcap_users_${username}";then
+		dosym "in.tftpd" "${rel_inst_path}/${name}"
+		#fi
 	done
 
 	# set_netifnames tool
