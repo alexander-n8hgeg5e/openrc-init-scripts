@@ -12,12 +12,15 @@
 name="nbd-ramdisk"
 description="mounts tmpfs over nfs , creates a remote file and makes it available with \"nbd\""
 
-pidfile_dir="/var/run/$(hostname)"
-pidfile="${pidfile_dir}/${RC_SVCNAME}.pid"
+devlink="/dev/${RC_SVCNAME}"
 remote_run_dir="/run/dusteater"
-imgfilepath="${remote_run_dir}/export_$(hostname)_${RC_SVCNAME}.img"
+imgfilename="export_$(hostname)_${RC_SVCNAME}.img"
+imgfilepath="${remote_run_dir}/${imgfilename}"
 max_allocate_space=10485760
 min_allocate_space=12400
+nbd_server_service_name="nbd-server-${RC_SVCNAME##*[-]}"
+nbd_server_export_name="nbd-ramdisk-${RC_SVCNAME##*[-]}"
+max_nbd_devices=20
 
 depend()
 {
@@ -29,8 +32,8 @@ depend()
 start()
 {
 	        ebegin "Activating ${RC_SVCNAME}"
-		    mount "${remote_run_dir}" \
-            && free_space_k="$(\
+		    mount "${remote_run_dir}"                                             ||  eend 1 || return 
+            free_space_k="$(\
                                 df -h -Bk --output=avail "${remote_run_dir}"|\
                                 tail -n+2|\
                                 head -n1|\
@@ -44,40 +47,59 @@ start()
             else
                 allocate_space_k="-1"
             fi
-            [[ $allocate_space_k -gt 0 ]] \
-            && einfo "space = $(( ${allocate_space_k}/1024 )) Mib" \
-		    && fallocate --length "$(( ${allocate_space_k} * 1024 ))" "${imgfilepath}" \
-            && modprobe nbd \
-            && sudo ssh root@de 'rc-service nbd-server start' \
-            && start_nbd_client \
-            && eend 0
+            if [[ $allocate_space_k -gt 0 ]];then
+                einfo "space = $(( ${allocate_space_k}/1024 )) Mib"                            ||  eend 1 || return
+		        fallocate --length "$(( ${allocate_space_k} * 1024 ))" "${imgfilepath}"        ||  eend 1 || return
+                modprobe nbd                                                                   
+                einfo "starting remote nbd server: \"${nbd_server_service_name}\""
+                ssh root@de "rc-service ${nbd_server_service_name} start"                      ||  eend 1 || return
+                start_nbd_client                                                               ||  eend 1 || return
+            else
+                eend 1 || return
+            fi
+            eend 0
 }
 
 stop()
 {
 	ebegin "Deactivating ${RC_SVCNAME}"
-    nbd_free_dev "/dev/nbd${RC_SVCNAME: -1:1}" \
-    && sudo ssh root@de rc-service nbd-server stop \
-    && rm -f "${imgfilepath}" \
-	&& umount "${remote_run_dir}" \
-    && ps --no-header -p $(cat "${pidfile}"|head -n1) && eend 1 "it seems that nbd client did not exit properly"
-    pfc="$(cat ${pidfile}|tail -n+1)" \
-    && echo "${pfc}" > "${pidfile}" \
-	&& eend 0
+    if ! devpath=$(get_devpath);then
+        ewarn "No active nbd device found."
+    else
+        if [[ -n "${devpath}" ]];then
+            nbd_free_dev "${devpath}"                            || eend 1 || return
+        fi
+    fi
+    ssh root@de "rc-service ${nbd_server_service_name} stop" || eend 1 || return
+    rm -f "${imgfilepath}"                                   || eend 1 || return
+	umount "${remote_run_dir}"
+    status=$?
+    if [[ $status -ne 0 ]];then
+        if [[ $status -ne 32 ]];then
+            eend 1 "umount failed" || return
+        fi
+    fi
+    eend 0
+}
+
+get_devpath() {
+    devicepath=$(readlink "${devlink}") || eend 1 || return
+    echo ${devicepath}
 }
 
 start_nbd_client()
 {
-		nbd_free_dev "/dev/nbd${RC_SVCNAME: -1:1}"
-        [[ -d  $(realpath "${pidfile_dir}") ]] || mkdir -p "${pidfile_dir}"
-        #chown -R nbd:nbd "${pidfile_dir}"
-        #chmod -R ug=rwX,o= "${pidfile_dir}"
-        #chmod g+s "${pidfile_dir}"
-		nbd-client -name "${RC_SVCNAME}" -swap -persist -connections 8 dusteater 8464 "/dev/nbd${RC_SVCNAME: -1:1}"
-        pid=$(nbd-client -c "/dev/nbd${RC_SVCNAME: -1:1}")
+		outp=$(nbd-client -name "${nbd_server_export_name}" -swap -persist -connections 8 dusteater 8464 |grep -E '^Connected[ ]+[/]dev[/]nbd[0-9]+')
     	ret=$?
+        devpath=$(echo "${outp}" | sed -E 's/^Connected[ ]+([/]dev[/]nbd[0-9]+).*$/\1/')
+        einfo "dev=${devpath}"
     	if [[ $ret -eq 0 ]];then
-            echo ${pid} >> ${pidfile}
+            if [[ -n "${devpath}" ]];then
+                rm "${devlink}"
+                ln -s "${devpath}" "${devlink}" || eend 1 || return
+            else
+                eend 1 "could not get device path"
+            fi
     	else
         	eend 1 "failed to start ${RC_SVCNAME}"
     	fi
@@ -85,8 +107,8 @@ start_nbd_client()
 
 nbd_free_dev()
 {
-    einfo "freeing nbd device ${1}"
-    nbd-client -d /dev/${1}
+    einfo "freeing nbd device \"${1}\""
+    nbd-client -d "${1}"
     [[ $? -ne 2 ]] \
     && eend 0 "/dev/${1} free"
 }

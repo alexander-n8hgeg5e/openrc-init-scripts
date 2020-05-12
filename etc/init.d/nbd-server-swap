@@ -4,11 +4,13 @@
 
 # the server reads the "/etc/nbd-server/config" file
 
-name="nbd-server daemon"
-description=""
-command=nbd-server
-command_args="${nbd-server_args}"
+name="nbd-server daemon swap"
+description="the part of the nbd-server that provides the swap export"
 
 depend() {
-need net.dusteater iptables ip6tables
+need nbd-server
+}
+
+start(){
+	einfo "starting nbd-server-swap"
 }

@@ -2,18 +2,18 @@
 # Copyright 2020 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-name="remote_ramdisk_extension"
-description="adds remote ramdisk to local filesystem"
+name="nbd-fs-backing-tmp"
+description="enables the network block device based backing device for the filesystem at /tmp"
 
 depend() {
-need nbd-ramdisk-0
+	need nbd-ramdisk-tmp
 }
 
 start() {
- ebegin "adding dev \"/dev/nbd0\" to btrfs-fs at \"/run/tmp\""
+ ebegin "adding dev \"/dev/nbd-ramdisk-tmp\" to btrfs-fs at \"/run/tmp\""
  if [[ $(df -h /run/tmp | tail -n+2|cut -d' ' -f1) = "/dev/loop0" ]];then
  	if [[ $(losetup -O back-file /dev/loop0 |tail -n+2) = /run/tmp.img ]];then
-		btrfs dev add /dev/nbd0 /run/tmp
+		btrfs dev add /dev/nbd-ramdisk-tmp /run/tmp
 		eend 0 ;return
 	fi
  fi
@@ -21,10 +21,10 @@ start() {
 }
 
 stop() {
- ebegin "removing dev \"/dev/nbd0\" from btrfs-fs at \"/run/tmp\""
+ ebegin "removing dev \"/dev/nbd-ramdisk-tmp\" from btrfs-fs at \"/run/tmp\""
  if [[ $(df -h /run/tmp | tail -n+2|cut -d' ' -f1) = "/dev/loop0" ]];then
  	if [[ $(losetup -O back-file /dev/loop0 |tail -n+2) = /run/tmp.img ]];then
-		btrfs dev del /dev/nbd0 /run/tmp
+		btrfs dev del /dev/nbd-ramdisk-tmp /run/tmp
 		eend 0 ;return
 	fi
  fi
