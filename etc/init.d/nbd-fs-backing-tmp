@@ -13,7 +13,7 @@ start() {
  ebegin "adding dev \"/dev/nbd-ramdisk-tmp\" to btrfs-fs at \"/run/tmp\""
  if [[ $(df -h /run/tmp | tail -n+2|cut -d' ' -f1) = "/dev/loop0" ]];then
  	if [[ $(losetup -O back-file /dev/loop0 |tail -n+2) = /run/tmp.img ]];then
-		btrfs dev add /dev/nbd-ramdisk-tmp /run/tmp
+		btrfs dev add /dev/nbd-ramdisk-tmp /run/tmp || eend 1 || return
 		eend 0 ;return
 	fi
  fi
@@ -24,7 +24,7 @@ stop() {
  ebegin "removing dev \"/dev/nbd-ramdisk-tmp\" from btrfs-fs at \"/run/tmp\""
  if [[ $(df -h /run/tmp | tail -n+2|cut -d' ' -f1) = "/dev/loop0" ]];then
  	if [[ $(losetup -O back-file /dev/loop0 |tail -n+2) = /run/tmp.img ]];then
-		btrfs dev del /dev/nbd-ramdisk-tmp /run/tmp
+		btrfs dev del /dev/nbd-ramdisk-tmp /run/tmp || eend 1 "ERROR: Failed to remove nbd device. Try reducing disk usage!" || return 
 		eend 0 ;return
 	fi
  fi
