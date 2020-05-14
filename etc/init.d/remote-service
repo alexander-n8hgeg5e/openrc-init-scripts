@@ -1,0 +1,28 @@
+#!/sbin/openrc-run
+
+name="${RC_SVCNAME}"
+providingnode_servicename="${name#*_}"
+providingnode="${providingnode_servicename%%_*}"
+servicename="${name##*_}"
+#
+# symlink format (RC_SVCNAME) := [^_]*_([^_]+)_(.*)
+# \1 := nodename
+# \2 := servicename
+#
+description="This is the remote service \"${servicename}\" provided by node \"${providingnode}\""
+
+start() {
+    ebegin "Starting service \"${servicename}\" on \"${providingnode}\""
+    ssh root@"${providingnode}" rc-service "${servicename}" start || eend 1 || return
+    eend 0
+}
+
+stop() {
+    ebegin "Stopping service \"${servicename}\" on \"${providingnode}\""
+    ssh root@"${providingnode}" rc-service "${servicename}" stop || eend 1 || return
+    eend 0
+}
+
+status(){
+    ssh root@"${providingnode}" rc-service "${servicename}" status
+}
