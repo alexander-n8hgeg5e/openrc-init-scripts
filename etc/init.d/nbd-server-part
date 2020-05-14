@@ -1,0 +1,29 @@
+#!/sbin/openrc-run
+# Copyright 2019 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+# the server reads the "/etc/nbd-server/config" file
+
+part_name="${RC_SVCNAME##nbd[-]server[-]}"
+
+name="${RC_SVCNAME}"
+description="The part of the nbd-server that provides the \"${partname}\" export."
+
+
+depend() {
+	partname_first_part="${part_name%[-]*}"
+	if [[ ${partname_first_part} = ramdisk ]];then
+		partname_except_first="${part_name#ramdisk[-]}"
+		need nbd-server "ramdisk-file-${partname_except_first}"
+	else
+		need nbd-server
+	fi
+}
+
+start(){
+	einfo "starting ${RC_SVCNAME}"
+}
+
+stop(){
+	einfo "stopping ${RC_SVCNAME}"
+}

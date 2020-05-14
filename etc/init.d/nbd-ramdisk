@@ -18,9 +18,8 @@ imgfilename="export_$(hostname)_${RC_SVCNAME}.img"
 imgfilepath="${remote_run_dir}/${imgfilename}"
 max_allocate_space=10485760
 min_allocate_space=12400
-nbd_server_service_name="nbd-server-${RC_SVCNAME##*[-]}"
-nbd_server_export_name="nbd-ramdisk-${RC_SVCNAME##*[-]}"
-max_nbd_devices=20
+nbd_server_export_name="ramdisk-${RC_SVCNAME##*[-]}"
+nbd_server_service_name="nbd-server_${nbd_server_export_name}"
 
 depend()
 {

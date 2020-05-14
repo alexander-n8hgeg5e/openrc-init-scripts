@@ -38,8 +38,7 @@ src_install(){
 	doinitd etc/init.d/skyscraper
 	doinitd etc/init.d/nbd-client
 	doinitd etc/init.d/nbd-server
-	doinitd etc/init.d/nbd-server-swap
-	doinitd etc/init.d/nbd-server-tmp
+	doinitd etc/init.d/nbd-server-part
 
 	etc_confd_dir="etc/conf.d"
 	dodir "${etc_confd_dir}"
@@ -67,6 +66,7 @@ src_install(){
 	doinitd etc/init.d/tmp_backing_remote
 	doinitd etc/init.d/tmp_subdirs
 	doinitd etc/init.d/nbd-ramdisk
+	doinitd etc/init.d/nbd-ramdisk-v2
 	doinitd etc/init.d/nbd-fs-backing-tmp
 	doinitd etc/init.d/remote-service
 	doinitd etc/init.d/ramdisk-file

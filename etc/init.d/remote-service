@@ -11,11 +11,16 @@ servicename="${name##*_}"
 #
 description="This is the remote service \"${servicename}\" provided by node \"${providingnode}\""
 
+depend() {
+provide "remote_${servicename}"
+}
+
 start() {
     ebegin "Starting service \"${servicename}\" on \"${providingnode}\""
     ssh root@"${providingnode}" rc-service "${servicename}" start || eend 1 || return
     eend 0
 }
+
 
 stop() {
     ebegin "Stopping service \"${servicename}\" on \"${providingnode}\""
@@ -25,4 +30,17 @@ stop() {
 
 status(){
     ssh root@"${providingnode}" rc-service "${servicename}" status
+}
+
+notify_starting() {
+    mark_service_starting
+}
+notify_started() {
+    mark_service_started
+}
+notify_stopping() {
+    mark_service_stopping
+}
+notify_stopped() {
+    mark_service_stopped
 }

@@ -1,0 +1,82 @@
+#!/sbin/openrc-run
+# Copyright (c) 2007-2015 The OpenRC Authors.
+# See the Authors file at the top-level directory of this distribution and
+# https://github.com/OpenRC/openrc/blob/master/AUTHORS
+#
+# This file is part of OpenRC. It is subject to the license terms in
+# the LICENSE file found in the top-level directory of this
+# distribution and at https://github.com/OpenRC/openrc/blob/master/LICENSE
+# This file may not be copied, modified, propagated, or distributed
+# except according to the terms contained in the LICENSE file.
+
+name="nbd-ramdisk"
+description="provides remote ramdisk block device via nbd"
+
+devlink="/dev/${RC_SVCNAME}"
+nbd_server_export_name="ramdisk-${RC_SVCNAME##*[-]}"
+nbd_server_service_name="nbd-server-${nbd_server_export_name}"
+
+depend()
+{
+    need "remote_${nbd_server_service_name}"
+}
+
+start()
+{
+	        ebegin "Activating ${RC_SVCNAME}"
+            modprobe nbd                                                                   
+            start_nbd_client ||  eend 1 || return
+            eend 0
+}
+
+stop()
+{
+	ebegin "Deactivating ${RC_SVCNAME}"
+    if ! devpath=$(get_devpath);then
+        ewarn "Could not obtain nbd device path."
+    else
+        if [[ -n "${devpath}" ]];then
+            nbd_free_dev "${devpath}"                            || eend 1 || return
+        fi
+    fi
+    eend 0
+}
+
+get_devpath() {
+    devicepath=$(readlink "${devlink}") || eend 1 || return
+    echo ${devicepath}
+}
+
+start_nbd_client()
+{
+		einfo "export name = \"${nbd_server_export_name}\""
+		outp=$(nbd-client -name "${nbd_server_export_name}" -swap -persist -connections 8 dusteater 8464 |grep -E '^Connected[ ]+[/]dev[/]nbd[0-9]+')
+    	ret=$?
+        devpath=$(echo "${outp}" | sed -E 's/^Connected[ ]+([/]dev[/]nbd[0-9]+).*$/\1/')
+        einfo "dev=${devpath}"
+    	if [[ $ret -eq 0 ]];then
+            if [[ -n "${devpath}" ]];then
+                if [[ -e "${devlink}" ]];then
+					[[ -L "${devlink}" ]] || eend 1 "Existing file \"${devlink}\" is no symlink." || return
+					if [[ $(readlink ${devlink}) != ${devpath} ]];then
+						rm  "${devlink}" || eend "Could not delete wrong symlink" || return
+						ln -s "${devpath}" "${devlink}" || eend 1 || return
+					fi
+				else
+					ln -s "${devpath}" "${devlink}" || eend 1 || return
+				fi
+            else
+                eend 1 "could not get device path"
+            fi
+    	else
+        	eend 1 "failed to start ${RC_SVCNAME}"
+    	fi
+}
+
+nbd_free_dev()
+{
+    einfo "freeing nbd device \"${1}\""
+    nbd-client -d "${1}"
+    [[ $? -ne 2 ]] \
+    && eend 0 "/dev/${1} free"
+}
