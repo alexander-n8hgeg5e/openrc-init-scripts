@@ -6,6 +6,12 @@ name="${RC_SVCNAME}"
 nodename="${RC_SVCNAME#net[.]}"
 description="network device of node ${nodename}"
 
+depend() {
+    [[ "${nodename} = "node" ]] && return
+    #network_if=$(cat "/etc/conf.d/${nodename}" | grep -E '^\s*network_if\s*[=]\s*(\s|;)*.*$' | sed -E 's/^\s*network_if\s*[=]\s*()(\s|;)*.*$/\1/' )
+    need "net.${network_if}"
+}
+
 start() {
 einfo "starting network interface connecting ${nodename}"
 }

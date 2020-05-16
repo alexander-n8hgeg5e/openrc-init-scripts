@@ -2,13 +2,28 @@
 # Copyright 1999-2018 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
+nodename="${RC_SVCNAME#net[.]}"
+description="node ${nodename}"
+
 depend() {
-need in_tftpd_dusteater nfs dhcpd net.enp5s0 sshd
+need nfs "in_tftpd_${nodename}" net.${nodename} dhcpd sshd
+}
+
+status() {
+    level=$(ssh -o ConnectTimeout=1 "root@${nodename}" "rc-status -r" 2> /dev/null)
+	for uplevel in ${uplevels};do
+    	if [[ "${level}" = "${uplevel}" ]] && ! service_stopping "${nodename}"; then
+			mark_service_started skyscraper
+			break
+		fi
+	done
+    default_status
 }
 
 start() {
     
-    ebegin "Starting dusteater..."
+    ebegin "Starting ${nodename}"
+    mark_service_starting "${nodename}"
     
     sudo ethtool enp5s0|grep -q 'Speed: 1000M'
     r_full_speed=$?

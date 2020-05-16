@@ -2,23 +2,28 @@
 # Copyright 2019 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-name="skyscraper"
-description=""
+nodename="${RC_SVCNAME#net[.]}"
+description="node ${nodename}"
 
 depend() {
-need nfs in_tftpd_skyscraper net.enp3s0u3 dhcpd sshd
+need nfs "in_tftpd_${nodename}" net.${nodename} dhcpd sshd
 }
 
 status() {
-    level=$(ssh -o ConnectTimeout=1 root@skyscraper "rc-status -r" 2> /dev/null)
-    [[ $level == default ]] && ! service_stopping skyscraper && mark_service_started skyscraper
+    level=$(ssh -o ConnectTimeout=1 "root@${nodename}" "rc-status -r" 2> /dev/null)
+	for uplevel in ${uplevels};do
+    	if [[ "${level}" = "${uplevel}" ]] && ! service_stopping "${nodename}"; then
+			mark_service_started skyscraper
+			break
+		fi
+	done
     default_status
 }
 
 start() {
     
-    ebegin "Starting skyscraper..."
-    mark_service_starting skyscraper
+    ebegin "Starting ${nodename}"
+    mark_service_starting "${nodename}"
     
     sudo ethtool enp3s0u3|grep -q 'Speed: 1000M'
     r_full_speed=$?
