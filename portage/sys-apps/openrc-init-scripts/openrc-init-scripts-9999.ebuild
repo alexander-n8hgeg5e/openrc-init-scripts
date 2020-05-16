@@ -33,9 +33,8 @@ src_install(){
 	doinitd etc/init.d/nfs-tmp
 	doinitd etc/init.d/nbd-swap
 	doinitd etc/init.d/x
-	doinitd etc/init.d/dusteater
+	doinitd etc/init.d/node
 	doinitd etc/init.d/in_tftpd_node
-	doinitd etc/init.d/skyscraper
 	doinitd etc/init.d/nbd-client
 	doinitd etc/init.d/nbd-server
 	doinitd etc/init.d/nbd-server-part
@@ -76,6 +75,4 @@ src_install(){
 	insinto "${lib_rc_sh_dir}"
 	doins "${lib_rc_sh_dir}/rc-cluster.sh"
 	doins "${lib_rc_sh_dir}/rc-cluster-callback.sh"
-
-	doinitd etc/init.d/net.node
 }

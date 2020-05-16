@@ -17,8 +17,10 @@ nbd_server_export_name="ramdisk-${RC_SVCNAME##*[-]}"
 nbd_server_service_name="nbd-server-${nbd_server_export_name}"
 
 depend()
-{
-    need "remote_${nbd_server_service_name}"
+{   
+	if [[ "${nbd_server_service_name}" != nbd-server-ramdisk-v2 ]];then
+    	need "remote_${nbd_server_service_name}"
+	fi
 }
 
 start()
