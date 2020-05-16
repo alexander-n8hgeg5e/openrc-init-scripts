@@ -28,19 +28,18 @@ status() {
 }
 
 start() {
-    
     ebegin "Starting ${nodename}"
     mark_service_starting "${nodename}"
-    
+	einfo $wait_network
     sudo ethtool "${network_if}" | grep -q "Speed: ${network_if_default_speed}M"
     r_full_speed=$?
     sudo ethtool "${network_if}"|grep -q 'Link detected: yes'
     r_has_link=$?
 
-    if [ "${r_full_speed}" == "0" ] ; then
+    if [ $r_has_link -eq 0 ] && [ $r_full_speed -eq 0 ]; then
         # do nothing for now
         einfo 'link is at allready at full speed -> no waiting'
-    elif [ "${r_has_link}" == "0" ] ; then
+    elif [ $r_has_link -eq 0 ] ; then
         # network is active 
         # if the network is active the thing is at least powered on
         # only do a wol to wake it up in case it's sleeping
@@ -49,6 +48,8 @@ start() {
         # no network link
         # full wakeup with waiting
         $power_on_cmd 1> /dev/null
+        wol -i "${network_addr}" "${mac_addr}" 1> /dev/null 2> /dev/null
+		sleep 1
         wol -i "${network_addr}" "${mac_addr}" 1> /dev/null 2> /dev/null
         einfo "waiting ${bootwait_time} sec , ${nodename} need some time to come up"
         sleep 150
