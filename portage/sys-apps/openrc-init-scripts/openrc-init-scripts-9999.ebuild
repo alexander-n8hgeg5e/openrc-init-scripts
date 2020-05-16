@@ -70,4 +70,10 @@ src_install(){
 	doinitd etc/init.d/nbd-fs-backing-tmp
 	doinitd etc/init.d/remote-service
 	doinitd etc/init.d/ramdisk-file
+
+	lib_rc_sh_dir="lib/rc/sh"
+	dodir   "${lib_rc_sh_dir}"
+	insinto "${lib_rc_sh_dir}"
+	doins "${lib_rc_sh_dir}/rc-cluster.sh"
+	doins "${lib_rc_sh_dir}/rc-cluster-callback.sh"
 }

@@ -1,5 +1,7 @@
 #!/sbin/openrc-run
 
+. "$RC_LIBEXECDIR"/sh/rc-cluster-callback.sh
+
 name="${RC_SVCNAME}"
 providingnode_servicename="${name#*_}"
 providingnode="${providingnode_servicename%%_*}"
@@ -32,15 +34,3 @@ status(){
     ssh root@"${providingnode}" rc-service "${servicename}" status
 }
 
-notify_starting() {
-    mark_service_starting
-}
-notify_started() {
-    mark_service_started
-}
-notify_stopping() {
-    mark_service_stopping
-}
-notify_stopped() {
-    mark_service_stopped
-}
