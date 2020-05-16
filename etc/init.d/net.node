@@ -1,0 +1,11 @@
+#!/sbin/openrc-run
+# Copyright 2020 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="${RC_SVCNAME}"
+nodename="${RC_SVCNAME#net[.]}"
+description="network device of node ${nodename}"
+
+start() {
+einfo "starting network interface connecting ${nodename}"
+}

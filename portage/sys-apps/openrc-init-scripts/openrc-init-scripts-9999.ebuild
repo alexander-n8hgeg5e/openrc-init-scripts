@@ -76,4 +76,6 @@ src_install(){
 	insinto "${lib_rc_sh_dir}"
 	doins "${lib_rc_sh_dir}/rc-cluster.sh"
 	doins "${lib_rc_sh_dir}/rc-cluster-callback.sh"
+
+	doinitd etc/init.d/net.node
 }
