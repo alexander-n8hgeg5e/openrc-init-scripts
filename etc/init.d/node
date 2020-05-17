@@ -11,7 +11,7 @@ depend() {
 	fi
 }
 
-_status() {
+__status() {
     level=$(ssh -o ConnectTimeout=1 "root@${nodename}" "rc-status -r" 2> /dev/null)
 	for uplevel in ${uplevels};do
     	if [[ "${level}" = "${uplevel}" ]] && ! service_stopping "${nodename}"; then
@@ -23,7 +23,7 @@ _status() {
 }
 
 status() {
-	_status
+	__status
     default_status
 }
 
