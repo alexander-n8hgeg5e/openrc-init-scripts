@@ -61,7 +61,7 @@ start() {
       ping -c1 -q ${nodename}  1> /dev/null 2> /dev/null
       r1=$?
       if [ $r1 == 0 ];then
-	  	if _status ;then
+	  	if __status 1>/dev/null 2>/dev/null ;then
 			if [[ -n $finish_cmd ]];then
 				einfo "running final task"
 				$finish_cmd && eend 0 || eend 1 || eerror "Final task failed.Cmd was:\"${finish_cmd}\""
