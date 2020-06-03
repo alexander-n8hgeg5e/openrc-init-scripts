@@ -67,6 +67,7 @@ src_install(){
 	doinitd etc/init.d/nbd-ramdisk-v2
 	doinitd etc/init.d/nbd-fs-backing-tmp
 	doinitd etc/init.d/remote-service
+	doinitd etc/init.d/cluster-service
 	doinitd etc/init.d/ramdisk-file
 
 	lib_rc_sh_dir="lib/rc/sh"
