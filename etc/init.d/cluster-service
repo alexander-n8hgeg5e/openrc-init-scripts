@@ -1,54 +1,74 @@
 #!/sbin/openrc-run
 
-. "$RC_LIBEXECDIR"/sh/rc-cluster-callback.sh
-
 name="${RC_SVCNAME}"
-providingnode_servicename="${name#*_}"
-providingnode="${providingnode_servicename%%_*}"
-servicename="${name##*_}"
-#
-# symlink format (RC_SVCNAME) := [^_]*_([^_]+)_(.*)
-# \1 := nodename
-# \2 := servicename
-#
-description="This is the cluster service \"${servicename}\" provided by node \"${providingnode}\""
+
+. /lib/rc/sh/rc-linkname-parsers.sh
+read -r -a parts <<< "$(parse3parts22 ${RC_SVCNAME})"
+
+providingnode="${parts[0]}"
+servicename="${parts[1]}"
+
+description="Virtual \"cluster service\" that adds a dependency to the service it is linked to.\n"
+description+="The service will be started/stopped on all nodes syncroniously."
 
 depend() {
-provide "cluster_${servicename}" "${servicename}"
+if [[ "$RC_SVCNAME" != cluster-service ]];then
+    if [[ "$(hostname)" = "${providingnode}" ]];then
+        need "${servicename}"
+    else
+        need "remote_${providingnode}_${servicename}"
+    fi
+fi
 }
 
 start() {
-    ebegin "Starting service \"${servicename}\" on \"${providingnode}\""
-    ssh root@"${providingnode}" rc-service "${servicename}" start || eend 1 || return
-                                rc-service "${servicename}" start || eend 1 || return
+    ebegin "Starting cluster service \"cluster_${providingnode}_${servicename}\" provided by \"${providingnode}\""
+    # to prevent recursion, mark service starting
+    # so the remote trying to call back gets warning "allready stopping"
+    mark_service_starting
+    for node in $(cat /etc/nodelist);do
+        if [[ "$(hostname)" != "${node}" ]];then
+            rc-service "remote_${node}_cluster_${providingnode}_${servicename}" status 1>/dev/null 2>/dev/null
+            retcode=$?
+            if [[ $retcode -ne 8 ]];then
+                rc-service "remote_${node}_cluster_${providingnode}_${servicename}" start || eend 1 || return
+            fi
+        fi
+    done
     eend 0
 }
-
 
 stop() {
-    ebegin "Stopping service \"${servicename}\" on \"${providingnode}\""
-    ssh root@"${providingnode}" rc-service "${servicename}" stop || eend 1 || return
-                                rc-service "${servicename}" stop || eend 1 || return
+    ebegin "Stopping cluster service \"cluster_${providingnode}_${servicename}\" provided by \"${providingnode}\""
+    # to prevent recursion, mark service stopping
+    # so the remote trying to call back gets warning "allready stopping"
+    mark_service_stopping
+    for node in $(cat /etc/nodelist);do
+        if [[ "$(hostname)" != "${node}" ]];then
+            rc-service "remote_${node}_cluster_${providingnode}_${servicename}" status 1>/dev/null 2>/dev/null
+            retcode=$?
+            if [[ $retcode -ne 4 ]];then
+                rc-service "remote_${node}_cluster_${providingnode}_${servicename}" stop || eend 1 || return
+            fi
+        fi
+    done
     eend 0
 }
 
-status(){
-    ssh root@"${providingnode}" rc-service "${servicename}" status
-    retcode0=$?
-                                rc-service "${servicename}" status
-    retcode1=$?
-    if [[ $retcode0 -eq $retcode1 ]];then
-        return $retcode0
-    else # 32:= crashed 16:=inactive 8:=starting 4:=stopping 0:= started 3:= stopped
-         # 64:= undefined
-        if [[ $retcode0 -eq 32 ]] || [[ $retcode1 -eq 32 ]];then return 32;fi
-        if [[ $retcode0 -eq  8 ]] && [[ $retcode1 -eq  4 ]];then return  1;fi
-        if [[ $retcode0 -eq  4 ]] && [[ $retcode1 -eq  8 ]];then return  1;fi
-        if [[ $retcode0 -eq  8 ]] && [[ $retcode1 -eq 16 ]];then return  8;fi
-        if [[ $retcode0 -eq  4 ]] && [[ $retcode1 -eq 16 ]];then return  4;fi
-        if [[ $retcode0 -eq 16 ]] && [[ $retcode1 -eq  8 ]];then return  8;fi
-        if [[ $retcode0 -eq 16 ]] && [[ $retcode1 -eq  4 ]];then return  4;fi
-        return 64
-    fi
-}
+#status(){
+#    if [[ "$(hostname)" = "${providingnode}" ]];then
+#        rc-service "${servicename}" status
+#        retcode=$?
+#    else
+#        rc-service "remote_${providingnode}_${servicename}" status
+#        retcode=$?
+#    fi
+#    # 32:= crashed 16:=inactiv 8:=starting 4:=stopping 0:= started 3:= stopped
+#    if [[ $retcode -eq 16 ]];then mark_service_inactive "${RC_SVCNAME}"; fi
+#    if [[ $retcode -eq  8 ]];then mark_service_starting "${RC_SVCNAME}"; fi
+#    if [[ $retcode -eq  4 ]];then mark_service_stopping "${RC_SVCNAME}"; fi
+#    if [[ $retcode -eq  3 ]];then mark_service_stopped  "${RC_SVCNAME}"; fi
+#    if [[ $retcode -eq  0 ]];then mark_service_started  "${RC_SVCNAME}"; fi
+#    return $retcode
+#}
 

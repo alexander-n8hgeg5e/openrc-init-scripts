@@ -13,7 +13,8 @@ name="${RC_SVCNAME}"
 description="provides a file on ramdisk/tmpfs filesystem"
 
 run_dir="/run"
-imgfilename="${RC_SVCNAME}.img"
+imgname="${RC_SVCNAME#*_}.img" # imgname after first underscore
+imgfilename="ramdisk-file_${imgname}" # get consistent prefix for img files
 imgfilepath="${run_dir}/${imgfilename}"
 
 max_allocate_space=1485760

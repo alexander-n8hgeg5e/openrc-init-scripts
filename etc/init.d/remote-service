@@ -1,16 +1,12 @@
 #!/sbin/openrc-run
 
-. "$RC_LIBEXECDIR"/sh/rc-cluster-callback.sh
-
 name="${RC_SVCNAME}"
-providingnode_servicename="${name#*_}"
-providingnode="${providingnode_servicename%%_*}"
-servicename="${name##*_}"
-#
-# symlink format (RC_SVCNAME) := [^_]*_([^_]+)_(.*)
-# \1 := nodename
-# \2 := servicename
-#
+
+. /lib/rc/sh/rc-linkname-parsers.sh
+read -r -a parts <<< "$(parse3parts22 ${RC_SVCNAME})"
+providingnode="${parts[0]}"
+servicename="${parts[1]}"
+
 description="This is the remote service \"${servicename}\" provided by node \"${providingnode}\""
 
 depend() {
@@ -18,19 +14,29 @@ provide "remote_${servicename}"
 }
 
 start() {
-    ebegin "Starting service \"${servicename}\" on \"${providingnode}\""
+    ebegin "Starting remote-service $RC_SVCNAME provided by node ${providingnode}"
+    #ebegin "DEBUG: calling cmd: ssh root@${providingnode} rc-service ${servicename} start"
     ssh root@"${providingnode}" rc-service "${servicename}" start || eend 1 || return
     eend 0
 }
 
 
 stop() {
-    ebegin "Stopping service \"${servicename}\" on \"${providingnode}\""
+    ebegin "Stopping remote-service $RC_SVCNAME provided by node ${providingnode}"
+    #ebegin "DEBUG: calling cmd: ssh root@${providingnode} rc-service ${servicename} start"
     ssh root@"${providingnode}" rc-service "${servicename}" stop || eend 1 || return
     eend 0
 }
 
 status(){
+    einfo DEBUG: $providingnode $servicename
     ssh root@"${providingnode}" rc-service "${servicename}" status
+    retcode=$?
+    # 32:= crashed 16:=inactiv 8:=starting 4:=stopping 0:= started 3:= stopped
+    if [[ $retcode -eq 16 ]];then mark_service_inactive "${RC_SVCNAME}"; fi
+    if [[ $retcode -eq  8 ]];then mark_service_starting "${RC_SVCNAME}"; fi
+    if [[ $retcode -eq  4 ]];then mark_service_stopping "${RC_SVCNAME}"; fi
+    if [[ $retcode -eq  3 ]];then mark_service_stopped  "${RC_SVCNAME}"; fi
+    if [[ $retcode -eq  0 ]];then mark_service_started  "${RC_SVCNAME}"; fi
+    return $retcode
 }
-

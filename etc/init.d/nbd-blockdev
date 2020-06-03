@@ -9,16 +9,25 @@
 # This file may not be copied, modified, propagated, or distributed
 # except according to the terms contained in the LICENSE file.
 
-name="nbd-ramdisk"
+name="nbd-blockdev"
 description="provides remote ramdisk block device via nbd"
 
-devlink="/dev/${RC_SVCNAME}"
-nbd_server_export_name="ramdisk-${RC_SVCNAME##*[-]}"
-nbd_server_service_name="nbd-server-${nbd_server_export_name}"
+. /lib/rc/sh/rc-linkname-parsers.sh
+read -r -a parts <<< "$(parse3parts22 ${RC_SVCNAME})"
+nodename="${parts[0]}"
+nbd_server_export_name="${parts[1]}"
+
+nbd_server_service_name="nbd-server-part_${nbd_server_export_name}"
+
+# instead of the prefix "nbd-blockdev" is used,
+# to get consitent prefixed-naming inside the dev dir
+devlink="/dev/nbd-blockdev_${nodename}_${nbd_server_export_name}"
 
 depend()
-{   
-	if [[ "${nbd_server_service_name}" != nbd-server-ramdisk-v2 ]];then
+{
+	# check to prevent depenceny to the link-target
+	# that is not the real service name
+	if [[ "${nbd_server_service_name}" != nbd-server-ramdisk ]];then
     	need "remote_${nbd_server_service_name}"
 	fi
 }
@@ -52,7 +61,7 @@ get_devpath() {
 start_nbd_client()
 {
 		einfo "export name = \"${nbd_server_export_name}\""
-		outp=$(nbd-client -name "${nbd_server_export_name}" -swap -persist -connections 8 dusteater 8464 |grep -E '^Connected[ ]+[/]dev[/]nbd[0-9]+')
+		outp=$(nbd-client -name "${nbd_server_export_name}" -swap -persist -connections 8 ${nodename} 8464 |grep -E '^Connected[ ]+[/]dev[/]nbd[0-9]+')
     	ret=$?
         devpath=$(echo "${outp}" | sed -E 's/^Connected[ ]+([/]dev[/]nbd[0-9]+).*$/\1/')
         einfo "dev=${devpath}"

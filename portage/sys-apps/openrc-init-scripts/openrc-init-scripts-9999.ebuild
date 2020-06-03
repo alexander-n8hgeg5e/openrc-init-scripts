@@ -35,7 +35,6 @@ src_install(){
 	doinitd etc/init.d/x
 	doinitd etc/init.d/node
 	doinitd etc/init.d/in_tftpd_node
-	doinitd etc/init.d/nbd-client
 	doinitd etc/init.d/nbd-server
 	doinitd etc/init.d/nbd-server-part
 
@@ -63,8 +62,7 @@ src_install(){
 	doinitd etc/init.d/tmp_backing_local
 	doinitd etc/init.d/tmp_backing_remote
 	doinitd etc/init.d/tmp_subdirs
-	doinitd etc/init.d/nbd-ramdisk
-	doinitd etc/init.d/nbd-ramdisk-v2
+	doinitd etc/init.d/nbd-blockdev
 	doinitd etc/init.d/nbd-fs-backing-tmp
 	doinitd etc/init.d/remote-service
 	doinitd etc/init.d/cluster-service
@@ -73,6 +71,5 @@ src_install(){
 	lib_rc_sh_dir="lib/rc/sh"
 	dodir   "${lib_rc_sh_dir}"
 	insinto "${lib_rc_sh_dir}"
-	doins "${lib_rc_sh_dir}/rc-cluster.sh"
-	doins "${lib_rc_sh_dir}/rc-cluster-callback.sh"
+	doins "${lib_rc_sh_dir}/rc-linkname-parsers.sh"
 }
