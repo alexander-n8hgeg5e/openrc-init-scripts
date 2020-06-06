@@ -23,6 +23,7 @@ depend()
 start()
 {
 	        ebegin "Activating ${RC_SVCNAME}"
+	        einfo "${dev_path}"
 			mkswap "${dev_path}" || eend 1 || return 
 		    swapon "${dev_path}" || eend 1 || return
 
@@ -41,6 +42,7 @@ start()
 stop()
 {
 	ebegin "Deactivating ${RC_SVCNAME}"
+	einfo "${dev_path}"
 	swapoff "${dev_path}" || eend 1 || return
     cat /var/run/sysctl_backup.vm.overcommit_ratio > /proc/sys/vm/overcommit_ratio || ewarn "${RC_SVCNAME}"
     cat /var/run/sysctl_backup.vm.watermark_scale_factor > /proc/sys/vm/watermark_scale_factor || ewarn "${RC_SVCNAME}"
