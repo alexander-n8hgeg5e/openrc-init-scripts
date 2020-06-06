@@ -17,6 +17,7 @@ need_service_name="${RC_SVCNAME#*_}"
 # instead of the prefix "nbd-blockdev" is used,
 # to get consitent prefixed-naming inside the dev dir
 devlink="/dev/nbd-blockdev_${need_service_name}"
+nbd_server_export_name="${need_service_name#*nbd_server*_}"
 
 depend(){
     if [[ "${RC_SVCNAME}" != "nbd-blockdev" ]];then
