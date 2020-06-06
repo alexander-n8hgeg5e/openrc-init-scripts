@@ -12,21 +12,21 @@
 name="nbd-blockdev"
 description="provides remote ramdisk block device via nbd"
 
-. /lib/rc/sh/rc-linkname-parsers.sh
-read -r -a parts <<< "$(parse3parts22 ${RC_SVCNAME})"
-nodename="${parts[0]}"
-nbd_server_export_name="${parts[1]}"
-
-nbd_server_service_name="nbd-server-part_${nbd_server_export_name}"
+need_service_name="${RC_SVCNAME#*_}"
 
 # instead of the prefix "nbd-blockdev" is used,
 # to get consitent prefixed-naming inside the dev dir
-devlink="/dev/nbd-blockdev_${nodename}_${nbd_server_export_name}"
+devlink="/dev/nbd-blockdev_${need_service_name}"
+
+depend(){
+    if [[ "${RC_SVCNAME}" != "nbd-blockdev" ]];then
+        need "${need_service_name}"
+    fi
+}
 
 start()
 {
 	        ebegin "Activating ${RC_SVCNAME}"
-            einfo "debug remote_${nbd_server_service_name}"
             modprobe nbd                                                                   
             start_nbd_client ||  eend 1 || return
             eend 0
