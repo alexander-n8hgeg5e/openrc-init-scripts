@@ -18,6 +18,8 @@ need_service_name="${RC_SVCNAME#*_}"
 # to get consitent prefixed-naming inside the dev dir
 devlink="/dev/nbd-blockdev_${need_service_name}"
 nbd_server_export_name="${need_service_name#*nbd-server*_}"
+nodename="${need_service_name#*cluster*_}"
+nodename="${nodename%%_*}"
 
 depend(){
     if [[ "${RC_SVCNAME}" != "nbd-blockdev" ]];then
@@ -54,6 +56,7 @@ get_devpath() {
 start_nbd_client()
 {
 		einfo "export name = \"${nbd_server_export_name}\""
+		einfo "devlink = \"${devlink}\""
 		outp=$(nbd-client -name "${nbd_server_export_name}" -swap -persist -connections 8 ${nodename} 8464 |grep -E '^Connected[ ]+[/]dev[/]nbd[0-9]+')
     	ret=$?
         devpath=$(echo "${outp}" | sed -E 's/^Connected[ ]+([/]dev[/]nbd[0-9]+).*$/\1/')
