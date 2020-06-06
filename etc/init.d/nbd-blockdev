@@ -35,6 +35,7 @@ depend()
 start()
 {
 	        ebegin "Activating ${RC_SVCNAME}"
+            einfo "debug remote_${nbd_server_service_name}"
             modprobe nbd                                                                   
             start_nbd_client ||  eend 1 || return
             eend 0
