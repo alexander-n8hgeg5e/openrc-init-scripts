@@ -27,7 +27,7 @@ depend()
 {
 	# check to prevent depenceny to the link-target
 	# that is not the real service name
-	if [[ "${nbd_server_service_name}" != nbd-server-ramdisk ]];then
+	if [[ "${RC_SVCNAME}" != "nbd-blockdev" ]];then
     	need "remote_${nbd_server_service_name}"
 	fi
 }
