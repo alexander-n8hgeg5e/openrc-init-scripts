@@ -12,14 +12,14 @@
 name="nbd-swap"
 description="enables network block device based swap"
 
-dev_path="/dev/nbd-ramdisk-swap"
+nbd_dev_link_name="${RC_SVCNAME##*_}"
+dev_path="/dev/${nbd_dev_link_name}"
 
 depend()
 {
-    need nbd-ramdisk-swap
+    need "${nbd_dev_link_name}"
 }
 
-start()
 {
 	        ebegin "Activating ${RC_SVCNAME}"
 			mkswap "${dev_path}" || eend 1 || return 
