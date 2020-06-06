@@ -23,15 +23,6 @@ nbd_server_service_name="nbd-server-part_${nbd_server_export_name}"
 # to get consitent prefixed-naming inside the dev dir
 devlink="/dev/nbd-blockdev_${nodename}_${nbd_server_export_name}"
 
-depend()
-{
-	# check to prevent depenceny to the link-target
-	# that is not the real service name
-	if [[ "${RC_SVCNAME}" != "nbd-blockdev" ]];then
-    	need "remote_${nbd_server_service_name}"
-	fi
-}
-
 start()
 {
 	        ebegin "Activating ${RC_SVCNAME}"
