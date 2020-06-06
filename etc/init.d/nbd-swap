@@ -20,6 +20,7 @@ depend()
     need "${nbd_dev_link_name}"
 }
 
+start()
 {
 	        ebegin "Activating ${RC_SVCNAME}"
 			mkswap "${dev_path}" || eend 1 || return 
