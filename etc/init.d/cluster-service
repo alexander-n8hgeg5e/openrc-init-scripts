@@ -22,7 +22,7 @@ fi
 }
 
 start() {
-    ebegin "Starting cluster service \"cluster_${providingnode}_${servicename}\" provided by \"${providingnode}\""
+    ebegin "Starting cluster service \"cluster_${providingnode}_${servicename}\" on \"$(hostname)\""
     # to prevent recursion, mark service starting
     # so the remote trying to call back gets warning "allready stopping"
     mark_service_starting
@@ -39,7 +39,7 @@ start() {
 }
 
 stop() {
-    ebegin "Stopping cluster service \"cluster_${providingnode}_${servicename}\" provided by \"${providingnode}\""
+    ebegin "Stopping cluster service \"cluster_${providingnode}_${servicename}\" on \"$(hostname)\""
     # to prevent recursion, mark service stopping
     # so the remote trying to call back gets warning "allready stopping"
     mark_service_stopping

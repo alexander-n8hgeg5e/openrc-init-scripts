@@ -15,9 +15,9 @@ depend() {
 }
 
 start(){
-	einfo "starting ${RC_SVCNAME}"
+	einfo "Starting ${RC_SVCNAME}"
 }
 
 stop(){
-	einfo "stopping ${RC_SVCNAME}"
+	einfo "Stopping ${RC_SVCNAME}"
 }
