@@ -63,7 +63,6 @@ src_install(){
 	doinitd etc/init.d/tmp_backing_remote
 	doinitd etc/init.d/tmp_subdirs
 	doinitd etc/init.d/nbd-blockdev
-	doinitd etc/init.d/nbd-fs-backing-tmp
 	doinitd etc/init.d/remote-service
 	doinitd etc/init.d/cluster-service
 	doinitd etc/init.d/ramdisk-file

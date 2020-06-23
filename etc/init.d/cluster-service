@@ -18,6 +18,7 @@ if [[ "$RC_SVCNAME" != cluster-service ]];then
     else
         need "remote_${providingnode}_${servicename}"
     fi
+    need cluster-com
 fi
 }
 
