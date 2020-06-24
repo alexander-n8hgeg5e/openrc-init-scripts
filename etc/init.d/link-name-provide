@@ -1,0 +1,9 @@
+#!/sbin/openrc-run
+
+depend(){
+ 	provide "${RC_SVCNAME}"
+}
+
+start(){
+	einfo "Service ${RC_SVCNAME} is provided."
+}

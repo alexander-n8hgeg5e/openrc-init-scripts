@@ -68,6 +68,7 @@ src_install(){
 	doinitd etc/init.d/cluster-service
 	doinitd etc/init.d/ramdisk-file
 	doinitd etc/init.d/net.node
+	doinitd etc/init.d/link-name-provide
 
 	lib_rc_sh_dir="lib/rc/sh"
 	dodir   "${lib_rc_sh_dir}"
