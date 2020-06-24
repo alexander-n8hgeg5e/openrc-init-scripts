@@ -11,6 +11,7 @@ description="This is the remote service \"${servicename}\" provided by node \"${
 
 depend() {
 provide "remote_${servicename}"
+need "${providingnode}"
 }
 
 start() {
