@@ -7,7 +7,9 @@ description="node ${nodename}"
 
 depend() {
 	if [[ "${nodename}" != node ]];then
-		need nfs "in_tftpd_${nodename}" net.${nodename} dhcpd sshd
+		if [[ "${nodename}" != $(hostname) ]];then
+			need nfs "in_tftpd_${nodename}" net.${nodename} dhcpd sshd
+		fi
 	fi
 }
 
@@ -23,101 +25,107 @@ __status() {
 }
 
 status() {
-	__status
+ 	if [[ "${nodename}" != $(hostname) ]];then
+		__status
+	fi
     default_status
 }
 
 start() {
-    ebegin "Starting ${nodename}"
-    mark_service_starting "${nodename}"
-	einfo $wait_network
-    sudo ethtool "${network_if}" | grep -q "Speed: ${network_if_default_speed}M"
-    r_full_speed=$?
-    sudo ethtool "${network_if}"|grep -q 'Link detected: yes'
-    r_has_link=$?
+ 	if [[ "${nodename}" != $(hostname) ]];then
+    	ebegin "Starting ${nodename}"
+    	mark_service_starting "${nodename}"
+		einfo $wait_network
+    	sudo ethtool "${network_if}" | grep -q "Speed: ${network_if_default_speed}M"
+    	r_full_speed=$?
+    	sudo ethtool "${network_if}"|grep -q 'Link detected: yes'
+    	r_has_link=$?
 
-    if [ $r_has_link -eq 0 ] && [ $r_full_speed -eq 0 ]; then
-        # do nothing for now
-        einfo 'link is at allready at full speed -> no waiting'
-    elif [ $r_has_link -eq 0 ] ; then
-        # network is active 
-        # if the network is active the thing is at least powered on
-        # only do a wol to wake it up in case it's sleeping
-        wol -i "${network_addr}" "${mac_addr}" 1> /dev/null 2> /dev/null
-    else
-        # no network link
-        # full wakeup with waiting
-        $power_on_cmd 1> /dev/null
-        wol -i "${network_addr}" "${mac_addr}" 1> /dev/null 2> /dev/null
-		sleep 1
-        wol -i "${network_addr}" "${mac_addr}" 1> /dev/null 2> /dev/null
-        einfo "waiting ${bootwait_time} sec , ${nodename} need some time to come up"
-        sleep 150
-        einfo "maybe ${nodename} is awake now"
-    fi
+    	if [ $r_has_link -eq 0 ] && [ $r_full_speed -eq 0 ]; then
+    	    # do nothing for now
+    	    einfo 'link is at allready at full speed -> no waiting'
+    	elif [ $r_has_link -eq 0 ] ; then
+    	    # network is active 
+    	    # if the network is active the thing is at least powered on
+    	    # only do a wol to wake it up in case it's sleeping
+    	    wol -i "${network_addr}" "${mac_addr}" 1> /dev/null 2> /dev/null
+    	else
+    	    # no network link
+    	    # full wakeup with waiting
+    	    $power_on_cmd 1> /dev/null
+    	    wol -i "${network_addr}" "${mac_addr}" 1> /dev/null 2> /dev/null
+			sleep 1
+    	    wol -i "${network_addr}" "${mac_addr}" 1> /dev/null 2> /dev/null
+    	    einfo "waiting ${bootwait_time} sec , ${nodename} need some time to come up"
+    	    sleep 150
+    	    einfo "maybe ${nodename} is awake now"
+    	fi
 
-    check=0
-    while true;do
-      ping -c1 -q ${nodename}  1> /dev/null 2> /dev/null
-      r1=$?
-      if [ $r1 == 0 ];then
-	  	if __status 1>/dev/null 2>/dev/null ;then
-			if [[ -n $finish_cmd ]];then
-				einfo "running final task"
-				$finish_cmd && eend 0 || eend 1 || eerror "Final task failed.Cmd was:\"${finish_cmd}\""
-				else
-					eend 0
+    	check=0
+    	while true;do
+    	  ping -c1 -q ${nodename}  1> /dev/null 2> /dev/null
+    	  r1=$?
+    	  if [ $r1 == 0 ];then
+		  	if __status 1>/dev/null 2>/dev/null ;then
+				if [[ -n $finish_cmd ]];then
+					einfo "running final task"
+					$finish_cmd && eend 0 || eend 1 || eerror "Final task failed.Cmd was:\"${finish_cmd}\""
+					else
+						eend 0
+				fi
+				break
 			fi
-			break
-		fi
-      else
-          sleep 1
-          wol -i "${network_addr}" "${mac_addr}" 1> /dev/null 2> /dev/null
-      fi
-      sleep 1
-    done
+    	  else
+    	      sleep 1
+    	      wol -i "${network_addr}" "${mac_addr}" 1> /dev/null 2> /dev/null
+    	  fi
+    	  sleep 1
+    	done
+	fi
 }
 
 stop() {
-ebegin "Stopping ${nodename}..."
-ssh -o ConnectTimeout=2 root@${nodename} openrc-shutdown -p now 1> /dev/null 2> /dev/null
-r0=$?
-if [ $r0 == 0 ];then
-   ## shutdown should be in progress...
-   sleep 7
-else
-   ewarn warning , first connection attempt failed
-fi
-check=0
-while true;do
-  ping -c1 -q ${nodename}  1> /dev/null 2> /dev/null
-  r1=$?
-
-  sudo ethtool "${network_if}"|grep -q "Speed: 100Mb/s"
-  r2=$?
-
-  sudo ethtool "${network_if}"|grep -q "Speed: 10Mb/s"
-  r3=$?
-
-  if [ "${r1}" == "1" ] && [ "${r2}" == "0" ];then
-      if [ "${check}" == "ok" ];then
-            break
-      fi
-      check="ok"
-  elif [ "${r1}" == "1" ] && [ "${r3}" == "0" ];then
-      if [ "${check}" == "ok" ];then
-            break
-      fi
-      check="ok"
-  fi
-  ssh -o ConnectTimeout=1 root@${nodename} shutdown -h now 2> /dev/null 1> /dev/null
-  sleep 3
-done
-$power_off_cmd 1> /dev/null
-retcode="$?"
-# in case of instant restart
-# need cooldown
-sleep 3
-eend $retcode
+ 	if [[ "${nodename}" != $(hostname) ]];then
+		ebegin "Stopping ${nodename}..."
+		ssh -o ConnectTimeout=2 root@${nodename} openrc-shutdown -p now 1> /dev/null 2> /dev/null
+		r0=$?
+		if [ $r0 == 0 ];then
+			## shutdown should be in progress...
+			sleep 7
+		else
+			ewarn warning , first connection attempt failed
+		fi
+		check=0
+		while true;do
+			ping -c1 -q ${nodename}  1> /dev/null 2> /dev/null
+			r1=$?
+			
+			sudo ethtool "${network_if}"|grep -q "Speed: 100Mb/s"
+			r2=$?
+			
+			sudo ethtool "${network_if}"|grep -q "Speed: 10Mb/s"
+			r3=$?
+			
+			if [ "${r1}" == "1" ] && [ "${r2}" == "0" ];then
+			    if [ "${check}" == "ok" ];then
+			          break
+			    fi
+			    check="ok"
+			elif [ "${r1}" == "1" ] && [ "${r3}" == "0" ];then
+			    if [ "${check}" == "ok" ];then
+			          break
+			    fi
+			    check="ok"
+			fi
+			ssh -o ConnectTimeout=1 root@${nodename} shutdown -h now 2> /dev/null 1> /dev/null
+			sleep 3
+		done
+		$power_off_cmd 1> /dev/null
+		retcode="$?"
+		# in case of instant restart
+		# need cooldown
+		sleep 3
+		eend $retcode
+	fi
 }
 
