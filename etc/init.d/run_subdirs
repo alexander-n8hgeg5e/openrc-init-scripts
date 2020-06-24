@@ -5,6 +5,15 @@
 name="run_subdirs"
 description="population subdirs and stuff inside of /run"
 
+# Specify a location of a directory tree
+# with the following config variable
+
+# run_tree="${run_tree}"
+
+# the contents of the tree will be copied
+# to /run with \"cp -a --no-clobber\"
+
+
 depend() {
 need root
 }
@@ -36,4 +45,13 @@ start() {
 }
 stop(){
 	echo -n ""
+}
+
+populate_run_tree(){
+    if [[ -n "${run_tree}" ]];then
+        einfo Populating \"/run\" with tree from \""${run_tree}"\".
+        for dir in $(ls -1Ab "${run_tree}");do
+            cp -a -t /run "$(realpath -e "${dir}")"
+        done
+    fi
 }
