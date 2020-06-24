@@ -34,7 +34,7 @@ src_install(){
 	doinitd etc/init.d/nbd-swap
 	doinitd etc/init.d/x
 	doinitd etc/init.d/node
-	doinitd etc/init.d/in_tftpd_node
+	doinitd etc/init.d/in-tftpd-node
 	doinitd etc/init.d/nbd-server
 	doinitd etc/init.d/nbd-server-part
 
@@ -47,7 +47,7 @@ src_install(){
 	rel_inst_path="usr/sbin"
 	for username in skyscraper dusteater ;do
 		name="in_tftpd_${username}"
-		dosym "in_tftpd_node" "etc/init.d/${name}"
+		#dosym "in_tftpd_node" "etc/init.d/${name}"
 		if ! use_if_iuse "tftpd_fcap_users_${username}";then
 			dosym "in.tftpd" "${rel_inst_path}/${name}"
 		fi
@@ -59,13 +59,15 @@ src_install(){
 	doinitd etc/init.d/cg_bg
 	dosbin usr/sbin/gen_io_lat_strings
 	doinitd etc/init.d/run_subdirs
-	doinitd etc/init.d/tmp_backing_local
-	doinitd etc/init.d/tmp_backing_remote
+	doinitd etc/init.d/tmp
+	doinitd etc/init.d/tmp-backing-remote
+	doinitd etc/init.d/tmp-backing-local
 	doinitd etc/init.d/tmp_subdirs
 	doinitd etc/init.d/nbd-blockdev
 	doinitd etc/init.d/remote-service
 	doinitd etc/init.d/cluster-service
 	doinitd etc/init.d/ramdisk-file
+	doinitd etc/init.d/net.node
 
 	lib_rc_sh_dir="lib/rc/sh"
 	dodir   "${lib_rc_sh_dir}"

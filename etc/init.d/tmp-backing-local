@@ -2,13 +2,22 @@
 # Copyright 2020 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-name="tmp_backing_local"
+name="${RC_SVCNAME}"
 description="prepares the blockdev for tmp and mounts the filesystem"
-tmp_img_file="/run/tmp.img"
+
+. /lib/rc/sh/rc-linkname-parsers.sh
+parse_svcdata
+node="${svcdata[node]}"
+servicename="${svcdata[name]}"
+
+
+tmp_img_file="/run/tmp_${servicename}.img"
 
 depend() {
-need localmount run_subdirs !tmp_backing_remote
-provide tmp_backing
+    if [[ "${RC_SVCNAME}" != "tmp-backing-local" ]];then
+		need localmount run_subdirs !tmp_backing_remote
+		provide tmp-backing
+    fi
 }
 
 get_loopdev_path() {
@@ -78,25 +87,28 @@ start() {
     loopdev_path=$(get_loopdev_path)
     einfo "loopdev path = \"${loopdev_path}\""
 
-    # generate only if there had been no img file
-    if [[ "${was_no_img_file}" -eq 1 ]];then
-        mkfs.btrfs --data single --metadata single "${loopdev_path}"
-    else
-        ewarn "Expecting file \"${tmp_img_file}\" to contain a valid filesystem."
-    fi
+ 	btrfs dev add "${loopdev_path}" "/run/tmp"
 
-    # mounting
-    mount -o compress-force=zstd,noatime "${loopdev_path}" /run/tmp
-    [[ $? -eq 32 ]] && eend 0 \
-    && mount -o bind /run/tmp /exports/run/tmp
+    ## generate only if there had been no img file
+    #if [[ "${was_no_img_file}" -eq 1 ]];then
+    #    mkfs.btrfs --data single --metadata single "${loopdev_path}"
+    #else
+    #    ewarn "Expecting file \"${tmp_img_file}\" to contain a valid filesystem."
+    #fi
+
+    ## mounting
+    #mount -o compress-force=zstd,noatime "${loopdev_path}" /run/tmp
+    #[[ $? -eq 32 ]] && eend 0 \
+    #&& mount -o bind /run/tmp /exports/run/tmp
 }
 
 stop() {
     ebegin "stopping tmp_backing"
-    if ! umount /run/tmp ;then
-        ewarn "doing layzy umount of /run/tmp"
-        umount -l /run/tmp || eend 1 "umount failed" || return
-    fi
+ 	btrfs dev remove $(get_loopdev_path) /run/tmp
+    #if ! umount /run/tmp ;then
+    #    ewarn "doing layzy umount of /run/tmp"
+    #    umount -l /run/tmp || eend 1 "umount failed" || return
+    #fi
     losetup -d $(get_loopdev_path) || ewarn "error during loopdev stopping"
     if ! rm "${tmp_img_file}";then
         if [[ -e "${tmp_img_file}" ]];then

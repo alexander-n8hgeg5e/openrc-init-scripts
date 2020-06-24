@@ -4,18 +4,20 @@
 
 name="tmp_backing_remote"
 description="mounts the remote filesystem"
-backing_node=esadc
+
+. /lib/rc/sh/rc-linkname-parsers.sh
+parse_svcdata
+node="${svcdata[node]}"
+servicename="${svcdata[name]}"
 
 depend() {
 need localmount run_subdirs !tmp_backing_local
-provide tmp_backing
+provide tmp-backing
 }
 
 start() {
-    mount /run/esadc \
-    || [[ $? -eq 32 ]] && eend 0
-    mount -o bind /run/esadc/tmp /tmp \
-    || [[ $? -eq 32 ]] && eend 0
+    mount /run/"${node}"                  || [[ $? -eq 32 ]] && eend 0
+    mount -o bind "/run/${node}/tmp" /tmp || [[ $? -eq 32 ]] && eend 0
 }
 
 umount_lazy_warn() {
@@ -27,7 +29,7 @@ umount_lazy_warn() {
 
 stop() {
     ebegin "stopping tmp_backing"
-    umount_lazy_warn "/tmp"                    || eend 1 || return
-    umount_lazy_warn "/run/${backing_node}"    || eend 1 || return
+    umount_lazy_warn "/tmp"             || eend 1 || return
+    umount_lazy_warn "/run/${node}"     || eend 1 || return
     eend 0
 }

@@ -1,0 +1,55 @@
+#!/sbin/openrc-run
+# Copyright 2020 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="tmp"
+description="mounts the filesystem"
+tmp_img_file="/run/tmp.img"
+
+depend() {
+need tmp-backing
+provide tmp
+}
+
+get_loopdev_path() {
+    losetup -all --noheadings -O back-file|grep -Eq "^${tmp_img_file}$" \
+    || losetup -f "${tmp_img_file}"
+    loopdev_path=$(losetup --noheadings -O name,back-file \
+        | grep --color=never -E "^[/]dev[/]loop[0-9]+[ ]+${tmp_img_file}" \
+        | cut -d' ' -f1)
+    echo "${loopdev_path}"
+}
+
+start() {
+	loopdev_path="$(get_loopdev_path)"
+    ebegin "mounting /run/tmp and /exports/run/tmp"
+	if ! mount|grep -q "^${loopdev_path} on /run/tmp";then
+    	einfo "mounting ${loopdev_path} on /run/tmp"
+    	mount -o compress-force=zstd,noatime "${loopdev_path}" /run/tmp
+		retcode=$?
+    	if [[ $retcode -eq 32 ]];then
+			eend 0
+		elif [[ $retcode -eq 0 ]];then
+			eend 0
+		else
+    		einfo "mount bind  ${loopdev_path} on /exports/run/tmp"
+    	    mount -o bind /run/tmp /exports/run/tmp
+			retcode=$?
+			if [[ $retcode -eq 32 ]];then
+				eend 0
+			elif [[ $retcode -eq 0 ]];then
+				eend 0
+			else
+				eend 1
+			fi
+		fi
+	fi
+}
+
+stop() {
+    ebegin "unmounting \"/tmp\""
+    if ! umount /run/tmp ;then
+        ewarn "doing layzy umount of /run/tmp"
+        umount -l /run/tmp || eend 1 "umount failed" || return
+    fi
+}

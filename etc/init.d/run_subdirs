@@ -35,13 +35,14 @@ start() {
             elif [[ "$(readlink ${linkname})" != "${linktarget}" ]];then
                 eerror "ERROR: Existing path \"${linkname}\" is not a symlink to \"${linktarget}\". Expecting nothing or the symlink there."
             else
-                einfo "Existing link at ${linkname} is valid."
+                einfo "Link ${linkname} is good."
             fi
         fi
     done
 
     mkdir -p   "/run/tmp"
     chmod 1777 "/run/tmp"
+	populate_run_tree
 }
 stop(){
 	echo -n ""
@@ -51,7 +52,7 @@ populate_run_tree(){
     if [[ -n "${run_tree}" ]];then
         einfo Populating \"/run\" with tree from \""${run_tree}"\".
         for dir in $(ls -1Ab "${run_tree}");do
-            cp -a -t /run "$(realpath -e "${dir}")"
+            cp -an -t /run "$(realpath -e "${run_tree}/${dir}")"
         done
     fi
 }

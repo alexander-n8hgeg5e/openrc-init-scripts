@@ -1,0 +1,41 @@
+#!/sbin/openrc-run
+# Copyright 1999-2005 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
+. /lib/rc/sh/rc-linkname-parsers.sh
+parse_svcdata
+node="${svcdata[node]}"
+ifname="${svcdata[name]}"
+
+depend() {
+    if [[ "${RC_SVCNAME}" != in-tftpd-node ]];then
+        need "net.${node}"
+		provide "in-tftpd_${node}"
+    fi
+}
+
+start() {
+	ebegin "Starting bootdata tftpd for ${node}"
+	einfo "addr=${INTFTPD_ADDRESS} path=${INTFTPD_PATH} nodename=${node}"
+	start-stop-daemon \
+	--start --exec /usr/sbin/in_tftpd_${node} \
+	-- \
+    --user "in_tftpd_${node}" \
+    --listen \
+    -vvv --ipv4 \
+    --permissive \
+    --port-range "24510:24550" \
+    --pidfile "/var/run/in-tftpd_${node}" \
+	--address "${INTFTPD_ADDRESS}" \
+	--secure "${INTFTPD_PATH}"
+	eend $?
+}
+
+stop() {
+	ebegin "Stopping bootdata tftpd for ${node}"
+	start-stop-daemon \
+    --pidfile "/var/run/in-tftpd_${node}" \
+	--name "/usr/sbin/in_tftpd_${node}" \
+	--stop
+	eend $?
+}

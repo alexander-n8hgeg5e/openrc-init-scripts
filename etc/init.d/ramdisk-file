@@ -17,8 +17,8 @@ imgname="${RC_SVCNAME#*_}.img" # imgname after first underscore
 imgfilename="ramdisk-file_${imgname}" # get consistent prefix for img files
 imgfilepath="${run_dir}/${imgfilename}"
 
-max_allocate_space=1485760
-min_allocate_space=12400
+[[ -z $max_allocate_space ]] && max_allocate_space=1485760
+[[ -z $min_allocate_space ]] && min_allocate_space=12400
 
 depend()
 {
