@@ -1,4 +1,5 @@
 
+declare -A svcdata
 
 parse_svcdata(){
 	# The RC_SVCNAME/linkname/(here ${1}) consists of 3 parts
@@ -14,8 +15,7 @@ parse_svcdata(){
 	
 	
 	# remove prefix
-	local without_prefix="${1#*_}"
-	declare -A svcdata
+	local without_prefix="${RC_SVCNAME#*_}"
 	
 	# name after first underscore
 	svcdata[name]="${without_prefix#*_}"
