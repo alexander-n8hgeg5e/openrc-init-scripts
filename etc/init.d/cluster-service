@@ -3,10 +3,9 @@
 name="${RC_SVCNAME}"
 
 . /lib/rc/sh/rc-linkname-parsers.sh
-read -r -a parts <<< "$(parse3parts22 ${RC_SVCNAME})"
-
-providingnode="${parts[0]}"
-servicename="${parts[1]}"
+parse_svcdata
+providingnode="${svcdata[node]}"
+servicename="${svcdata[name]}"
 
 description="Virtual \"cluster service\" that adds a dependency to the service it is linked to.\n"
 description+="The service will be started/stopped on all nodes syncroniously."
