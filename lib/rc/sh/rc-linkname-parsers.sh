@@ -1,6 +1,6 @@
 
 
-parse3parts22(){
+parse_svcdata(){
 	# The RC_SVCNAME/linkname/(here ${1}) consists of 3 parts
 	# devided by underscore.
 	# The prefix is not used.
@@ -14,13 +14,13 @@ parse3parts22(){
 	
 	
 	# remove prefix
-	without_prefix="${1#*_}"
+	local without_prefix="${1#*_}"
+	declare -A svcdata
 	
 	# name after first underscore
-	name="${without_prefix#*_}"
+	svcdata[name]="${without_prefix#*_}"
 	
 	# remove the longest ending
 	# the name will have underscores in it
-	node="${without_prefix%%_*}"
-	echo ${node} ${name}
+	svcdata[node]="${without_prefix%%_*}"
 }
