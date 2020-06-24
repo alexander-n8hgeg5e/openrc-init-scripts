@@ -29,8 +29,6 @@ src_install(){
 	fperms 1770 "/var/run"
 	fowners root:daemon "/run"
 	fowners root:daemon "/var/run"
-	doinitd etc/init.d/nfs-swap
-	doinitd etc/init.d/nfs-tmp
 	doinitd etc/init.d/nbd-swap
 	doinitd etc/init.d/x
 	doinitd etc/init.d/node
