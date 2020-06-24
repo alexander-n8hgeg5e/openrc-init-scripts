@@ -3,19 +3,12 @@
 # Distributed under the terms of the GNU General Public License v2
 
 depend() {
-	need net
+    if "${RC_SVCNAME}" != in_tftp_node;then
+        need "net.${RC_SVCNAME}"
+    fi
 }
 
 start() {
-    #--pidfile /var/run/in_tftpd_${INTFTPD_NODENAME} \
-    #--stderr-logger logger daemon.error \
-    #--stdout-logger logger daemon.info \
-    #--wait 500 \
-    #--make-pidfile \
-    #--background \
-    #--foreground \
-    #--pidfile /var/run/in_tftpd_${INTFTPD_NODENAME} \
-	#--user in_tftpd_${INTFTPD_NODENAME}:in_tftpd_${INTFTPD_NODENAME} \
 	ebegin "Starting bootdata tftpd for ${INTFTPD_NODENAME}"
 	einfo "addr=${INTFTPD_ADDRESS} path=${INTFTPD_PATH} nodename=${INTFTPD_NODENAME}"
 	start-stop-daemon \
