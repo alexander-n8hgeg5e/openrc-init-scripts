@@ -87,19 +87,37 @@ start() {
     loopdev_path=$(get_loopdev_path)
     einfo "loopdev path = \"${loopdev_path}\""
 
- 	btrfs dev add "${loopdev_path}" "/run/tmp"
-
-    ## generate only if there had been no img file
-    #if [[ "${was_no_img_file}" -eq 1 ]];then
-    #    mkfs.btrfs --data single --metadata single "${loopdev_path}"
-    #else
-    #    ewarn "Expecting file \"${tmp_img_file}\" to contain a valid filesystem."
-    #fi
-
-    ## mounting
-    #mount -o compress-force=zstd,noatime "${loopdev_path}" /run/tmp
-    #[[ $? -eq 32 ]] && eend 0 \
-    #&& mount -o bind /run/tmp /exports/run/tmp
+    # is a btrfs filesystem mounted at /run/tmp?
+    if sudo btrfs fi show /run/tmp 2>/dev/null ; then
+        einfo "Adding dev \"${loopdev_path}\" to btrfs filesystem at /run/tmp."
+        if ! btrfs dev add "${loopdev_path}" "/run/tmp" ; then
+            allready_done=0
+            for p in $(sudo btrfs fi show /run/tmp |grep -E 'path.*$'|sed -E 's/^.*path //') ;do
+                if [[ "${p}" = "${loopdev_path}" ]];then
+                    # already added
+                    allready_done=1
+                    break
+                fi
+            done
+            if [[ $allready_done -eq 1 ]];then
+                eend 0 "Loopdev was already added."
+            else
+                eend 1 "Could not add loopdev to fs"
+            fi
+        fi
+    else
+        einfo "Creating btrfs filesystem for /run/tmp"
+        # nothing mounted means assuming no fs is existing
+        # if it was existing it is expected
+        # that it is mounted or added
+        # if it is unmounted there could be remains of several different
+        # filesystems in /run/.
+        # It can not infered which one is the right one.
+        # So create a new one in this case.
+        mkfs.btrfs --data single --metadata single "${loopdev_path}"    \
+        && mount -o compress-force=zstd,noatime "${loopdev_path}" /run/tmp \
+        && mount -o bind /run/tmp /exports/run/tmp
+    fi
 }
 
 stop() {
