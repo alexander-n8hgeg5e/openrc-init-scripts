@@ -8,7 +8,7 @@ description="node ${nodename}"
 depend() {
 	if [[ "${nodename}" != node ]];then
 		if [[ "${nodename}" != $(hostname) ]];then
-			need nfs "in-tftpd_${nodename}" net.${nodename} dhcpd sshd
+			need nfs "in-tftpd_${nodename}" net.${nodename} dhcpd
 		fi
 	fi
 }
