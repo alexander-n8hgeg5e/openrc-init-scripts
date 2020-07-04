@@ -12,7 +12,7 @@ description+="The service will be started/stopped on all nodes syncroniously."
 
 depend() {
 if [[ "$RC_SVCNAME" != cluster-service ]];then
-    if [[ "$(hostname)" = "${providingnode}" ]];then
+    if [[ "$(cat /etc/hostname)" = "${providingnode}" ]];then
         need "${servicename}"
     else
         need "remote_${providingnode}_${servicename}"
