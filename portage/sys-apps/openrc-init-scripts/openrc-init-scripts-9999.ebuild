@@ -21,14 +21,6 @@ RDEPEND="${DEPEND} sys-apps/openrc
 
 src_install(){
 	hostname="$(hostname)"
-	mkdir "${S}/run"
-	mkdir "${S}/var/run"
-	keepdir "run"
-	keepdir "var/run"
-	fperms 1770 "/run"
-	fperms 1770 "/var/run"
-	fowners root:daemon "/run"
-	fowners root:daemon "/var/run"
 	doinitd etc/init.d/nbd-swap
 	doinitd etc/init.d/x
 	doinitd etc/init.d/node
