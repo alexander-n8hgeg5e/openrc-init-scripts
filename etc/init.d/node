@@ -117,6 +117,7 @@ stop() {
 			    fi
 			    check="ok"
 			fi
+			ssh -o ConnectTimeout=1 root@${nodename} ethtool -s $wol_interface_name wol g 2> /dev/null 1> /dev/null
 			ssh -o ConnectTimeout=1 root@${nodename} shutdown -h now 2> /dev/null 1> /dev/null
 			sleep 3
 		done
