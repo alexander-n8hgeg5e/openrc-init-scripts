@@ -57,7 +57,7 @@ start() {
 			sleep 1
     	    wol -i "${network_addr}" "${mac_addr}" 1> /dev/null 2> /dev/null
     	    einfo "waiting ${bootwait_time} sec , ${nodename} need some time to come up"
-    	    sleep 150
+            sleep ${bootwait_time}
     	    einfo "maybe ${nodename} is awake now"
     	fi
 
