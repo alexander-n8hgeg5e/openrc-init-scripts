@@ -8,19 +8,26 @@ providingnode="${svcdata[node]}"
 servicename="${svcdata[name]}"
 
 description="Virtual \"cluster service\" that adds a dependency to the service it is linked to.\n"
-description+="The service will be started/stopped on all nodes syncroniously."
+description+="The service will be started/stopped on all nodes synchronously."
 
 depend() {
 if [[ "$RC_SVCNAME" != cluster-service ]];then
     if [[ "$(cat /etc/hostname)" = "${providingnode}" ]];then
         need "${servicename}"
     else
-        if [[ "${providingnode%%-*}" != "nodes" ]] ;then
-            need "remote_${providingnode}_${servicename}"
-        else
+        # determine the providing node/nodes
+        word0="${providingnode%%-*}"
+        if [[ "${word0}" == "nodes" ]] ;then
             einfo "nonimplemented case"
-            # TODO: implement for all nodes in like "nodes-n0-n1-..."
+            # TODO: all nodes in "nodes-n0-n1-..."
+        elif [[ "${word0}" == "any" ]] ;then
+            einfo "nonimplemented case"
+            # TODO: any node in "any-n0-n1-..."
+        else
+            need "remote_${providingnode}_${servicename}"
+
         fi
+        provide $servicename
     fi
     need cluster-com
 fi
