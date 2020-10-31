@@ -1,0 +1,17 @@
+#!/sbin/openrc-run
+
+. /lib/rc/sh/rc-linkname-parsers.sh
+parse_svcdata
+node="${svcdata[node]}"
+ifname="${svcdata[name]}"
+
+depend() {
+if [[ "$RC_SVCNAME" != node-net ]];then
+        need "net.${ifname}"
+        provide "node-net_${node}"
+fi
+}
+
+start(){
+	einfo "Starting network interface for node \"${node}\"."
+}

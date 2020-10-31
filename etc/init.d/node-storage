@@ -1,0 +1,17 @@
+#!/sbin/openrc-run
+
+. /lib/rc/sh/rc-linkname-parsers.sh
+parse_svcdata
+node="${svcdata[node]}"
+thing="${svcdata[name]}"
+
+depend() {
+if [[ "$RC_SVCNAME" != node-storage ]];then
+        need "${thing}"
+        provide "node-storage_${node}"
+fi
+}
+
+start(){
+	einfo "Starting node-storage service for node \"${node}\"."
+}
