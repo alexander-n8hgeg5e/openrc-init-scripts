@@ -41,10 +41,7 @@ start() {
     	sudo ethtool "${network_if}"|grep -q 'Link detected: yes'
     	r_has_link=$?
 
-    	if [ $r_has_link -eq 0 ] && [ $r_full_speed -eq 0 ]; then
-    	    # do nothing for now
-    	    einfo 'link is at allready at full speed -> no waiting'
-    	elif [ $r_has_link -eq 0 ] ; then
+        if [ $r_has_link -eq 0 ] ; then
     	    # network is active 
     	    # if the network is active the thing is at least powered on
     	    # only do a wol to wake it up in case it's sleeping
