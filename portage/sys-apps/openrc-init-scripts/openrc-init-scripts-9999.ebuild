@@ -64,4 +64,6 @@ src_install(){
 	dodir   "${lib_rc_sh_dir}"
 	insinto "${lib_rc_sh_dir}"
 	doins "${lib_rc_sh_dir}/rc-linkname-parsers.sh"
+
+	doinitd etc/init.d/prepare_sysklogd
 }

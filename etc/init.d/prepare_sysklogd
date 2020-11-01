@@ -1,0 +1,39 @@
+#!/sbin/openrc-run
+# Copyright 2020 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="prepare_sysklogd"
+description=""
+
+depend() {
+need udev
+}
+
+start(){
+    prepare_0 \
+    && prepare_1 \
+    && prepare_2 
+}
+
+prepare_0(){
+    ebegin checking /dev/log symlink
+    [[ -h /dev/log ]] \
+    && [[ "$( realpath "$(readlink /dev/log)")" = "/run/logdaemon/log" ]] \
+    || if ln -s /run/logdaemon/log /dev/log; then
+           einfo created /dev/log/symlink
+       fi
+    eend
+}
+
+prepare_1(){
+    ebegin 'chown/chmod /proc/kmsg'
+    chown :logdaemon /proc/kmsg
+    chmod g=r /proc/kmsg
+    eend
+}
+
+prepare_2(){
+    ebegin 'syslog cap'
+    filecap /usr/sbin/syslogd syslog
+    eend
+}
