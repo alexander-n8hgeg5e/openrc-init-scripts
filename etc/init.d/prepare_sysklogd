@@ -12,7 +12,8 @@ need udev
 start(){
     prepare_0 \
     && prepare_1 \
-    && prepare_2 
+    && prepare_2 \
+    && prepare_3 
 }
 
 prepare_0(){
@@ -35,5 +36,13 @@ prepare_1(){
 prepare_2(){
     ebegin 'syslog cap'
     filecap /usr/sbin/syslogd syslog
+    eend
+}
+
+prepare_3(){
+    ebegin 'syslog fifo'
+    mkfifo /var/log/fifo \
+    && chown logdaemon:logdaemon /var/log/fifo \
+    && chmod 0640 /var/log/fifo
     eend
 }
