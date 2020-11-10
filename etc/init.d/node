@@ -84,7 +84,8 @@ start() {
 stop() {
  	if [[ "${nodename}" != $(hostname) ]];then
 		ebegin "Stopping ${nodename}..."
-		ssh -o ConnectTimeout=1 root@${nodename} ethtool -s $wol_interface_name wol g || eend 1 || return
+		ssh -o ConnectTimeout=1 root@${nodename} ethtool -s $wol_interface_name wol umbg || eend 1 || return
+		einfo "$(ssh -o ConnectTimeout=1 root@${nodename} ethtool $wol_interface_name |grep 'Wake-on:')"
 		ssh -o ConnectTimeout=2 root@${nodename} openrc-shutdown -p now 1> /dev/null 2> /dev/null || eend 1 || return
 		r0=$?
 		if [ $r0 == 0 ];then
