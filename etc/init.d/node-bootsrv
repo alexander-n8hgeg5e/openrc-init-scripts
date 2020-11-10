@@ -9,6 +9,7 @@ depend() {
 if [[ "$RC_SVCNAME" != node-bootsrv ]];then
         need "${thing}"
         provide "node-bootsrv_${node}"
+        provide "node-bootsrv_anynode"
 fi
 }
 

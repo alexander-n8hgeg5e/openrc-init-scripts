@@ -9,6 +9,7 @@ depend() {
 if [[ "$RC_SVCNAME" != node-dhcpd ]];then
         need "${thing}"
         provide "node-dhcpd_${node}"
+        provide "node-dhcpd_anynode"
 fi
 }
 

@@ -8,7 +8,7 @@ description="node ${nodename}"
 depend() {
 	if [[ "${nodename}" != node ]];then
 		if [[ "${nodename}" != $(hostname) ]];then
-			need "node-storage_${nodename}" "node-bootsrv_${nodename}" node-net_${nodename} node-dhcpd_${nodename}
+			need "node-storage_${nodename}" "node-net_${nodename}" !node-dhcpd_anynode !node-bootsrv_anynode
 		fi
 	fi
 }
@@ -35,6 +35,9 @@ start() {
  	if [[ "${nodename}" != $(hostname) ]];then
     	ebegin "Starting ${nodename}"
     	mark_service_starting "${nodename}"
+        rc-service "node-bootsrv_${nodename}" start || die "failed to start bootsrv for node ${nodename}"
+        rc-service "node-dhcpd_${nodename}" start || die  "failed to start dhcpd for node ${nodename}"
+
 		einfo $wait_network
     	sudo ethtool "${network_if}" | grep -q "Speed: ${network_if_default_speed}M"
     	r_full_speed=$?
@@ -79,6 +82,9 @@ start() {
     	  sleep 1
     	done
 	fi
+    rc-service "node-bootsrv_${nodename}" stop   || eerror  "failed to stop bootsrv for node ${nodename}"
+    rc-service "node-dhcpd_${nodename}"   stop   || eerror  "failed to stop dhcpd for node ${nodename}"
+    eend 0
 }
 
 stop() {
