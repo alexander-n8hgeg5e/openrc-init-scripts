@@ -17,6 +17,8 @@ RDEPEND="${DEPEND} sys-apps/openrc
 	acct-user/in_tftpd_dusteater
 	acct-group/in_tftpd_skyscraper
 	acct-group/in_tftpd_dusteater
+	acct-user/in_tftpd_esadc
+	acct-group/in_tftpd_esadc
 "
 
 src_install(){
@@ -35,7 +37,7 @@ src_install(){
 	doins "${etc_confd_dir}/bootmisc"
 
 	rel_inst_path="usr/sbin"
-	for username in skyscraper dusteater ;do
+	for username in skyscraper dusteater esadc;do
 		name="in_tftpd_${username}"
 		#dosym "in_tftpd_node" "etc/init.d/${name}"
 		if ! use_if_iuse "tftpd_fcap_users_${username}";then

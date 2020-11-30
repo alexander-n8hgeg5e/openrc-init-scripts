@@ -31,25 +31,55 @@ status() {
     default_status
 }
 
+__power_on(){
+        # optional power on 
+    	if [[ -n "${power_on_cmd}" ]]; then
+            $power_on_cmd || eend 1 || return
+        fi
+}
+
+__power_off(){
+        # optional power off 
+    	if [[ -n "${power_off_cmd}" ]]; then
+            $power_off_cmd || eend 1 || return
+        fi
+}
+
+__wol(){
+        # optional wake on lan
+        if [[ -n "${wol_interface_name}" ]] && [[ -n "${mac_addr}" ]] ; then
+    	wol -i "${network_addr}" "${mac_addr}" || eend 1 || return
+        fi
+}
+
+__wol_mode_setup(){
+        if [[ -n "${wol_interface_name}" ]] ; then
+            [[ -z "${wol_mode_setup}" ]] && wol_mode_setup="g" # default to g(magic code)
+		    ssh -o ConnectTimeout=1 root@${nodename} ethtool -s $wol_interface_name wol "${wol_mode_setup}" || eend 1 || return
+		    einfo "$(ssh -o ConnectTimeout=1 root@${nodename} ethtool $wol_interface_name |grep 'Wake-on:')"
+        fi
+}
+
 start() {
  	if [[ "${nodename}" != $(hostname) ]];then
     	ebegin "Starting ${nodename}"
     	mark_service_starting "${nodename}"
+    	ping -c1 -q ${nodename}  1> /dev/null 2> /dev/null
+    	r1=$?
         rc-service "node-bootsrv_${nodename}" start || eend "failed to start bootsrv for node ${nodename}" || return
         rc-service "node-dhcpd_${nodename}"   start || eend "failed to start dhcpd for node ${nodename}"   || return
 
 
-    	if [[ -n "${power_on_cmd}" ]]; then
-            $power_on_cmd
-        fi
+        # optional power on 
+        __power_on
+        # optional wake on lan
+        __wol
 
-    	if [[ -n "${mac_addr}" ]] ; then
-    	wol -i "${network_addr}" "${mac_addr}" 1> /dev/null 2> /dev/null
+        if [[ $r1 == 1 ]] ; then
+    	    einfo "waiting ${bootwait_time} sec , ${nodename} need some time to come up"
+            sleep ${bootwait_time}
         fi
-
-    	einfo "waiting ${bootwait_time} sec , ${nodename} need some time to come up"
-        sleep ${bootwait_time}
-    	einfo "maybe ${nodename} is awake now"
+    	einfo "maybe ${nodename} is awake now, checking"
 
     	check=0
     	while true;do
@@ -67,7 +97,7 @@ start() {
 			fi
     	  else
     	      sleep 1
-    	      wol -i "${network_addr}" "${mac_addr}" 1> /dev/null 2> /dev/null
+              __wol
     	  fi
     	  sleep 1
     	done
@@ -80,10 +110,7 @@ start() {
 stop() {
  	if [[ "${nodename}" != $(hostname) ]];then
 		ebegin "Stopping ${nodename}..."
-        if [[ -n "${wol_interface_name}" ]] ; then
-		    ssh -o ConnectTimeout=1 root@${nodename} ethtool -s $wol_interface_name wol bg || eend 1 || return
-		    einfo "$(ssh -o ConnectTimeout=1 root@${nodename} ethtool $wol_interface_name |grep 'Wake-on:')"
-        fi
+        __wol_mode_setup
 		ssh -o ConnectTimeout=2 root@${nodename} openrc-shutdown -p now 1> /dev/null 2> /dev/null || eend 1 || return
 		r0=$?
 		if [ $r0 == 0 ];then
@@ -97,24 +124,6 @@ stop() {
 			ping -c1 -q ${nodename}  1> /dev/null 2> /dev/null
 			r1=$?
 			
-			#sudo ethtool "${network_if}"|grep -q "Speed: 100Mb/s"
-			#r2=$?
-			#
-			#sudo ethtool "${network_if}"|grep -q "Speed: 10Mb/s"
-			#r3=$?
-			
-			#if [ "${r1}" == "1" ] && [ "${r2}" == "0" ];then
-			#    if [ "${check}" == "ok" ];then
-			#          break
-			#    fi
-			#    check="ok"
-			#elif [ "${r1}" == "1" ] && [ "${r3}" == "0" ];then
-			#    if [ "${check}" == "ok" ];then
-			#          break
-			#    fi
-			#    check="ok"
-			#fi
-
 			if [ "${r1}" == "1" ] ;then
 			    if [ "${check}" == "ok" ];then
 			          break
@@ -125,7 +134,7 @@ stop() {
 			#ssh -o ConnectTimeout=1 root@${nodename} shutdown -h now 2> /dev/null 1> /dev/null
 			sleep 3
 		done
-		$power_off_cmd
+		__power_off
 		retcode="$?"
 		# in case of instant restart
 		# need cooldown
