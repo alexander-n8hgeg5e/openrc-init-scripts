@@ -1,96 +1,34 @@
 #!/sbin/openrc-run
+# Copyright 2020 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
 
 name="${RC_SVCNAME}"
 
-. /lib/rc/sh/rc-linkname-parsers.sh
-parse_svcdata
-providingnode="${svcdata[node]}"
-servicename="${svcdata[name]}"
-
-description="Virtual \"cluster service\" that adds a dependency to the service it is linked to.\n"
-description+="The service will be started/stopped on all nodes synchronously."
+description="cluster thing ${name}"
 
 depend() {
 if [[ "$RC_SVCNAME" != cluster-service ]];then
-    if [[ "$(cat /etc/hostname)" = "${providingnode}" ]];then
-        need "${servicename}"
-    else
-        # determine the providing node/nodes
-        word0="${providingnode%%-*}"
-        if [[ "${word0}" == "nodes" ]] ;then
-            einfo "nonimplemented case"
-            # TODO: all nodes in "nodes-n0-n1-..."
-        elif [[ "${word0}" == "any" ]] ;then
-            einfo "nonimplemented case"
-            # TODO: any node in "any-n0-n1-..."
-        else
-            need "remote_${providingnode}_${servicename}"
-
-        fi
-        provide $servicename
-    fi
-    need cluster-com
+	need "cluster_${providingnode}_${name}"
 fi
 }
 
-start() {
-    ebegin "Starting cluster service \"cluster_${providingnode}_${servicename}\" on \"$(hostname)\""
-    # to prevent recursion, mark service starting
-    # so the remote trying to call back gets warning "allready stopping"
-    mark_service_starting
-    for node in $(cat /etc/nodelist);do
-        if [[ "$(hostname)" != "${node}" ]];then
-            if [[ "${providingnode}" = "${node}" ]];then
-                rc-service "remote_${node}_cluster_${providingnode}_${servicename}" status 1>/dev/null 2>/dev/null
-                retcode=$?
-                if [[ $retcode -ne 8 ]];then
-                    rc-service "remote_${node}_cluster_${providingnode}_${servicename}" start || eend 1 || return
-                fi
-            elif [[ "${providingnode%%-*}" = "nodes" ]];then
-                einfo "nonimplemented case"
-                # TODO: implement for all nodes in like "nodes-n0-n1-..."
-            fi
-        fi
-    done
-    eend 0
+start(){
+	ebegin "starting ${name} .."
 }
 
-stop() {
-    ebegin "Stopping cluster service \"cluster_${providingnode}_${servicename}\" on \"$(hostname)\""
-    # to prevent recursion, mark service stopping
-    # so the remote trying to call back gets warning "allready stopping"
-    mark_service_stopping
-    for node in $(cat /etc/nodelist);do
-        if [[ "$(hostname)" != "${node}" ]];then
-            if [[ "${providingnode}" = "${node}" ]];then
-                rc-service "remote_${node}_cluster_${providingnode}_${servicename}" status 1>/dev/null 2>/dev/null
-                retcode=$?
-                if [[ $retcode -ne 4 ]];then
-                    rc-service "remote_${node}_cluster_${providingnode}_${servicename}" stop || eend 1 || return
-                fi
-            elif [[ "${providingnode%%-*}" = "nodes" ]];then
-                einfo "nonimplemented case"
-                # TODO: implement for all nodes in like "nodes-n0-n1-..."
-            fi
-        fi
-    done
-    eend 0
+stop(){
+    rc-service "remote_${providingnode}_${name}" stop
+	eend
 }
 
-#status(){
-#    if [[ "$(hostname)" = "${providingnode}" ]];then
-#        rc-service "${servicename}" status
-#        retcode=$?
-#    else
-#        rc-service "remote_${providingnode}_${servicename}" status
-#        retcode=$?
-#    fi
-#    # 32:= crashed 16:=inactiv 8:=starting 4:=stopping 0:= started 3:= stopped
-#    if [[ $retcode -eq 16 ]];then mark_service_inactive "${RC_SVCNAME}"; fi
-#    if [[ $retcode -eq  8 ]];then mark_service_starting "${RC_SVCNAME}"; fi
-#    if [[ $retcode -eq  4 ]];then mark_service_stopping "${RC_SVCNAME}"; fi
-#    if [[ $retcode -eq  3 ]];then mark_service_stopped  "${RC_SVCNAME}"; fi
-#    if [[ $retcode -eq  0 ]];then mark_service_started  "${RC_SVCNAME}"; fi
-#    return $retcode
-#}
+
+
+
+
+
+
+
+
+
+
 
