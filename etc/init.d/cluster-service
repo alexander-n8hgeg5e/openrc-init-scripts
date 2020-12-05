@@ -10,6 +10,7 @@ depend() {
 if [[ "$RC_SVCNAME" != cluster-service ]];then
 	need "cluster_${providingnode}_${name}"
 fi
+    need cluster-com
 }
 
 start(){
