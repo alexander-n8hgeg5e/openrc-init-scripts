@@ -27,7 +27,6 @@ if [[ "$RC_SVCNAME" != cluster-service-linkname-config ]];then
             need "remote_${providingnode}_${servicename}"
 
         fi
-        provide $servicename
     fi
     need cluster-com
 fi
