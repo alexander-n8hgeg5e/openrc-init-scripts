@@ -8,6 +8,7 @@ description="cluster thing ${name}"
 
 depend() {
 if [[ "$RC_SVCNAME" != cluster-service ]];then
+	einfo "debug: cluster service $name needs "cluster_${providingnode}_${name}""
 	need "cluster_${providingnode}_${name}"
 fi
     need cluster-com
