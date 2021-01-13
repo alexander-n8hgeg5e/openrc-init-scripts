@@ -33,19 +33,29 @@ fi
 }
 
 start() {
-    ebegin "Starting cluster service \"cluster_${providingnode}_${servicename}\" on \"$(hostname)\""
+    ebegin "Starting cluster service \"cluster_${providingnode}_${servicename}\" on \"$(hostname)\""
     # to prevent recursion, mark service starting
-    # so the remote trying to call back gets warning "allready stopping"
     mark_service_starting
-    for node in $(cat /etc/nodelist);do
+    for node in $(cat /etc/nodelist); do
         if [[ "$(hostname)" != "${node}" ]];then
+		    # -> I am not the node from nodelist
+			# so inform remote node
+			# first check,
+			# if the service is allready starting at the remote don't call the node start it
+            rc-service "remote_${node}_cluster_${providingnode}_${servicename}" status 1>/dev/null 2>/dev/null
+            retcode=$?
+            if [[ $retcode -ne 4 ]];then
+                rc-service "remote_${node}_cluster_${providingnode}_${servicename}" start || eend 1 || return
+            fi
+        else
+            # i am the node
+            # if i provide then start service
+            # else do nothing as this service will be marked startped
+            # after this script is done,
+            # and this is the desired effect
             if [[ "${providingnode}" = "${node}" ]];then
-                rc-service "remote_${node}_cluster_${providingnode}_${servicename}" status 1>/dev/null 2>/dev/null
-                retcode=$?
-                if [[ $retcode -ne 8 ]];then
-                    rc-service "remote_${node}_cluster_${providingnode}_${servicename}" start || eend 1 || return
-                fi
-            elif [[ "${providingnode%%-*}" = "nodes" ]];then
+                rc-service "${servicename}" start
+            elif [[ "${providingnode%%-*}" = "nodes" ]]; then
                 einfo "nonimplemented case"
                 # TODO: implement for all nodes in like "nodes-n0-n1-..."
             fi
@@ -53,6 +63,7 @@ start() {
     done
     eend 0
 }
+
 
 stop() {
     ebegin "Stopping cluster service \"cluster_${providingnode}_${servicename}\" on \"$(hostname)\""
