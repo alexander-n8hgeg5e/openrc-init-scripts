@@ -1,0 +1,32 @@
+#!/sbin/openrc-run
+# Copyright 2020 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="${RC_SVCNAME}"
+
+description="This service depends on high level service: \"${depends_on}\" and stops low level service \"${stops_service}\""
+
+depend() {
+if [[ "$RC_SVCNAME" != depend-on ]];then
+	need "${depends_on}"
+fi
+}
+
+start(){
+	ebegin "starting ${name} .."
+}
+
+stop(){
+	eend "stopping ${name} .."
+}
+
+
+
+
+
+
+
+
+
+
+

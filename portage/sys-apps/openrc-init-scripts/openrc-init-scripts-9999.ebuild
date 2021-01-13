@@ -9,7 +9,6 @@ EGIT_REPO_URI="${CODEDIR}""/openrc-init-scripts https://github.com/alexander-n8h
 LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
-IUSE=""
 
 DEPEND=""
 RDEPEND="${DEPEND} sys-apps/openrc
@@ -59,6 +58,7 @@ src_install(){
 	doinitd etc/init.d/remote-service
 	doinitd etc/init.d/cluster-service-linkname-config
 	doinitd etc/init.d/cluster-service
+	doinitd etc/init.d/depend-on
 	doinitd etc/init.d/ramdisk-file
 	doinitd etc/init.d/net.node
 	doinitd etc/init.d/link-name-provide
