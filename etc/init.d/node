@@ -8,7 +8,7 @@ description="node ${nodename}"
 depend() {
 	if [[ "${nodename}" != node ]];then
 		if [[ "${nodename}" != $(hostname) ]];then
-			need "node-storage_${nodename}" "node-net_${nodename}" !node-dhcpd_anynode !node-bootsrv_anynode
+			need "node-storage_${nodename}" "net.${nodename}" !node-dhcpd_anynode !node-bootsrv_anynode
 		fi
 	fi
 }
