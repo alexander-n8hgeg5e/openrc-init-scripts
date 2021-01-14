@@ -24,7 +24,32 @@ if [[ "$RC_SVCNAME" != cluster-service-linkname-config ]];then
             einfo "nonimplemented case"
             # TODO: any node in "any-n0-n1-..."
         else
-            need "remote_${providingnode}_${servicename}"
+
+	        [[ -e /etc/passive_nodes ]] \
+	        && passive_nodes=$(cat /etc/passiv_nodes) \
+	        || passive_nodes=""
+            self="$(hostname)"
+	        i_pnode_checked=0
+
+			if [[ $i_pnodeq_checked -eq 0 ]];then
+                #einfo "$self: checking if i am passive .."
+				i_pnode=0
+				if [[ -e /etc/passive_nodes ]] ;then
+					for pnode in $(cat /etc/passive_nodes); do
+						[[ "${pnode}" = "${self}" ]] && i_pnode=1
+					done
+				fi
+				i_pnode_checked=1
+                #if [[ ${i_pnode} -eq 1 ]];then
+                #    einfo "$self:                                 done , i am"
+                #else
+                #    einfo "$self:                                 done , i am not"
+                #fi
+			fi
+
+            if [[ $i_pnode -eq 0 ]] && [[ "${self}" != "{providingnode}" ]] ;then
+            	need "remote_${providingnode}_${servicename}"
+			fi
 
         fi
     fi
@@ -33,21 +58,58 @@ fi
 }
 
 start() {
-    ebegin "Starting cluster service \"cluster_${providingnode}_${servicename}\" on \"$(hostname)\""
+    self="$(hostname)"
+    ebegin "$self: Starting cluster service \"cluster_${providingnode}_${servicename}\" on \"$(hostname)\""
     # to prevent recursion, mark service starting
     mark_service_starting
-    for node in $(cat /etc/nodelist); do
-        if [[ "$(hostname)" != "${node}" ]];then
+	[[ -e /etc/passive_nodes ]] \
+	&& passive_nodes=$(cat /etc/passiv_nodes) \
+	|| passive_nodes=""
+	i_pnode_checked=0
+    for node in $providingnode $(cat /etc/nodelist | grep -v "${providingnode}" ); do
+		einfo "$self:  processing node $node .."
+        if [[ "${self}"  != "${node}" ]];then
+
+		    #einfo "$self:                 is remote node"
 		    # -> I am not the node from nodelist
 			# so inform remote node
 			# first check,
 			# if the service is allready starting at the remote don't call the node start it
-            rc-service "remote_${node}_cluster_${providingnode}_${servicename}" status 1>/dev/null 2>/dev/null
-            retcode=$?
-            if [[ $retcode -ne 4 ]];then
-                rc-service "remote_${node}_cluster_${providingnode}_${servicename}" start || eend 1 || return
-            fi
+
+			# check for i_pnode
+			if [[ $i_pnodeq_checked -eq 0 ]];then
+                #einfo "$self: checking if i am passive .."
+				i_pnode=0
+				if [[ -e /etc/passive_nodes ]] ;then
+					for pnode in $(cat /etc/passive_nodes); do
+						[[ "${pnode}" = "${self}" ]] && i_pnode=1
+					done
+				fi
+				i_pnode_checked=1
+                #if [[ ${i_pnode} -eq 1 ]];then
+                #    einfo "$self:                                 done , i am"
+                #else
+                #    einfo "$self:                                 done , i am not"
+                #fi
+			fi
+
+			if [[ $i_pnode -eq 0 ]] && [[ "${servicename}" != "${node}" ]];then
+                #einfo "$self: so, calling remote node $node ..."
+                einfo "$self: checking remote_${node}_cluster_${providingnode}_${servicename} ..."
+            	rc-service "remote_${node}_cluster_${providingnode}_${servicename}" status 2>/dev/null 1>/dev/null
+            	retcode=$?
+                #einfo "$self:                                     status is \"$retcode\""
+				# status 8 is starting
+				# status 4 is stopping
+            	if [[ $retcode -ne 8 ]];then
+                    #einfo "$self:                                     status is not 8 so need to start"
+            	    rc-service "remote_${node}_cluster_${providingnode}_${servicename}" start || eend 1 || return
+                else
+                    einfo "$self:                                                                           starting"
+            	fi
+			fi
         else
+            #einfo "$self:                  is me"
             # i am the node
             # if i provide then start service
             # else do nothing as this service will be marked startped
@@ -64,29 +126,66 @@ start() {
     eend 0
 }
 
-
 stop() {
-    ebegin "Stopping cluster service \"cluster_${providingnode}_${servicename}\" on \"$(hostname)\""
+    self="$(hostname)"
+    ebegin "$self: stopping cluster service \"cluster_${providingnode}_${servicename}\" on \"$(hostname)\""
     # to prevent recursion, mark service stopping
     mark_service_stopping
-    for node in $(cat /etc/nodelist); do
-        if [[ "$(hostname)" != "${node}" ]];then
+	[[ -e /etc/passive_nodes ]] \
+	&& passive_nodes=$(cat /etc/passiv_nodes) \
+	|| passive_nodes=""
+	i_pnode_checked=0
+    for node in $(cat /etc/nodelist | grep -v "${providingnode}" ) $providingnode; do
+		einfo "$self:  processing node $node .."
+        if [[ "${self}"  != "${node}" ]];then
+
+		    #einfo "$self:                 is remote node"
 		    # -> I am not the node from nodelist
 			# so inform remote node
 			# first check,
 			# if the service is allready stopping at the remote don't call the node stop it
-            rc-service "remote_${node}_cluster_${providingnode}_${servicename}" status 1>/dev/null 2>/dev/null
-            retcode=$?
-            if [[ $retcode -ne 4 ]];then
-                rc-service "remote_${node}_cluster_${providingnode}_${servicename}" stop || eend 1 || return
-            fi
+
+			# check for i_pnode
+			if [[ $i_pnodeq_checked -eq 0 ]];then
+                #einfo "$self: checking if i am passive .."
+				i_pnode=0
+				if [[ -e /etc/passive_nodes ]] ;then
+					for pnode in $(cat /etc/passive_nodes); do
+						[[ "${pnode}" = "${self}" ]] && i_pnode=1
+					done
+				fi
+				i_pnode_checked=1
+                #if [[ ${i_pnode} -eq 1 ]];then
+                #    einfo "$self:                                 done , i am"
+                #else
+                #    einfo "$self:                                 done , i am not"
+                #fi
+			fi
+
+			if [[ $i_pnode -eq 0 ]] ;then
+                #einfo "$self: so, calling remote node $node ..."
+                einfo "$self: checking remote_${node}_cluster_${providingnode}_${servicename} ..."
+            	rc-service "remote_${node}_cluster_${providingnode}_${servicename}" status 2>/dev/null 1>/dev/null
+            	retcode=$?
+                #einfo "$self:                                     status is \"$retcode\""
+				# status 8 is starting
+				# status 4 is stopping
+            	if [[ $retcode -ne 4 ]];then
+                    #einfo "$self:                                     status is not 4 so need to stop"
+            	    rc-service "remote_${node}_cluster_${providingnode}_${servicename}" stop || eend 1 || return
+                else
+                    einfo "$self:                                                                       stopping"
+            	fi
+			fi
         else
+            #einfo "$self:                  is me"
             # i am the node
             # if i provide then stop service
             # else do nothing as this service will be marked stopped
             # after this script is done,
             # and this is the desired effect
             if [[ "${providingnode}" = "${node}" ]];then
+                mark_service_stopped
                 rc-service "${servicename}" stop
             elif [[ "${providingnode%%-*}" = "nodes" ]]; then
                 einfo "nonimplemented case"
@@ -96,6 +195,9 @@ stop() {
     done
     eend 0
 }
+
+
+
 
 #status(){
 #    if [[ "$(hostname)" = "${providingnode}" ]];then
