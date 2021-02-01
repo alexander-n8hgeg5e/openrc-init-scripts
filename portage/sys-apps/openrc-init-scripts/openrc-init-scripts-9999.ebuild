@@ -37,7 +37,7 @@ src_install(){
 	doins "${etc_confd_dir}/bootmisc"
 
 	rel_inst_path="usr/sbin"
-	for username in skyscraper dusteater esadc;do
+	for username in $(cat /etc/nodelist);do
 		name="in_tftpd_${username}"
 		#dosym "in_tftpd_node" "etc/init.d/${name}"
 		if ! use_if_iuse "tftpd_fcap_users_${username}";then
