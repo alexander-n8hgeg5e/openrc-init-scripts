@@ -5,7 +5,8 @@ EAPI=7
 inherit git-r3 eutils
 DESCRIPTION="my init scripts"
 HOMEPAGE=""
-EGIT_REPO_URI="${CODEDIR}""/openrc-init-scripts https://github.com/alexander-n8hgeg5e/openrc-init-scripts.git"
+EGIT_REPO_URI="${CODEDIR}/${PN} ${MYGITHUB_URIBASE}${PN}.git"
+
 LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
