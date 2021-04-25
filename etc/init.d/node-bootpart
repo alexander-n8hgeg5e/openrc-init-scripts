@@ -1,0 +1,25 @@
+#!/sbin/openrc-run
+# Copyright 2021 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+
+name="${RC_SVCNAME}"
+
+. /lib/rc/sh/rc-linkname-parsers.sh
+parse_svcdata
+
+node="${svcdata[node]}"
+
+description="mounts the bootpartition for ${node}"
+
+depend() {  
+    need net.can
+}
+
+start() {
+	mount "/boot/node/${node}"
+}
+
+stop() {
+        umount "/boot/node/${node}"
+}
