@@ -15,6 +15,9 @@ depend() {
 }
 
 start() {
+	if [[ $USE_BOOTSRV_FOR_ALL_NODES -eq 1 ]];then
+		node="all"
+	fi
 	ebegin "Starting bootdata tftpd for ${node}"
 	einfo "addr=${INTFTPD_ADDRESS} path=${INTFTPD_PATH} nodename=${node}"
 	start-stop-daemon \
@@ -32,6 +35,9 @@ start() {
 }
 
 stop() {
+	if [[ $USE_BOOTSRV_FOR_ALL_NODES -eq 1 ]];then
+		node="all"
+	fi
 	ebegin "Stopping bootdata tftpd for ${node}"
 	start-stop-daemon \
     --pidfile "/var/run/in-tftpd_${node}" \
