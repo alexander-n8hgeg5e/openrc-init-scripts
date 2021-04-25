@@ -44,6 +44,10 @@ src_install(){
 			dosym "in.tftpd" "${rel_inst_path}/${name}"
 		fi
 	done
+	if ! use_if_iuse "tftpd_fcap_users_${username}";then
+		name="in_tftpd_all"
+		dosym "in.tftpd" "${rel_inst_path}/${name}"
+	fi
 
 	# set_netifnames tool
 	dosbin usr/sbin/set_netifnames
