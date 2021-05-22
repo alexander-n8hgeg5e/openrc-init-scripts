@@ -17,9 +17,9 @@ depend() {
 }
 
 start() {
-	mount "/boot/node/${node}"
+	mount "/node/boot/${node}"
 }
 
 stop() {
-        umount "/boot/node/${node}"
+	umount "/node/boot/${node}"
 }
