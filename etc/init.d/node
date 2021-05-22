@@ -47,6 +47,7 @@ __power_off(){
 
 __wol(){
         # optional wake on lan
+	einfo "wake on lan ..."
         if [[ -n "${wol_interface_name}" ]] && [[ -n "${mac_addr}" ]] ; then
     	wol -i "${network_addr}" "${mac_addr}" || eend 1 || return
         fi
