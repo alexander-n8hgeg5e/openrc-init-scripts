@@ -103,8 +103,6 @@ start() {
     	  sleep 1
     	done
 	fi
-    rc-service "node-bootsrv_${nodename}" stop   || eerror  "failed to stop bootsrv for node ${nodename}"
-    rc-service "node-dhcpd_${nodename}"   stop   || eerror  "failed to stop dhcpd for node ${nodename}"
     eend 0
 }
 
