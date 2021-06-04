@@ -4,6 +4,12 @@
 
 nodename="${RC_SVCNAME#net[.]}"
 description="node ${nodename}"
+default_shutdown_cmd="openrc-shutdown --halt now"
+[[ -z "${shutdown_cmd}" ]] && shutdown_cmd="${default_shutdown_cmd}"
+
+default_poweroff_cmd="openrc-shutdown -p now"
+[[ -z "${poweroff_cmd}" ]] && poweroff_cmd="${default_poweroff_cmd}"
+
 
 depend() {
 	if [[ "${nodename}" != node ]];then
@@ -109,8 +115,9 @@ start() {
 stop() {
  	if [[ "${nodename}" != $(hostname) ]];then
 		ebegin "Stopping ${nodename}..."
-        __wol_mode_setup
-		ssh -o ConnectTimeout=2 root@${nodename} openrc-shutdown -p now 1> /dev/null 2> /dev/null || eend 1 || return
+        	__wol_mode_setup
+		einfo "sending shutdown cmd \"${shutdown_cmd}\""
+		ssh -o ConnectTimeout=2 root@${nodename} "${shutdown_cmd}" || eend 1 || return
 		r0=$?
 		if [ $r0 == 0 ];then
 			## shutdown should be in progress...
@@ -124,7 +131,7 @@ stop() {
 			r1=$?
 			
 			if [ "${r1}" == "1" ] ;then
-			    if [ "${check}" == "ok" ];then
+			    if [[ "${check}" == "ok" ]];then
 			          break
 			    fi
 			    check="ok"
