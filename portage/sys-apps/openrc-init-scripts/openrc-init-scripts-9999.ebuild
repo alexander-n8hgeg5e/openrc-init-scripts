@@ -33,7 +33,6 @@ src_install(){
 	etc_confd_dir="etc/conf.d"
 	dodir "${etc_confd_dir}"
 	insinto "${etc_confd_dir}"
-	doins "${etc_confd_dir}/dusteater"
 	doins "${etc_confd_dir}/bootmisc"
 
 	rel_inst_path="usr/sbin"
