@@ -1,0 +1,24 @@
+#!/sbin/openrc-run
+# Copyright 2020 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+without_prefix="${RC_SVCNAME#*_}"
+name="integrity-swap"
+description="enable integrity swap on configured swap partition (_postfix of link name configuration)"
+swap_device_name="${without_prefix}"
+[[ -n ${swap_device_name} ]] || swap_device_name="/dev/null"
+
+depend() {
+need lvm
+}
+
+start(){
+    dm-integrity-setup -a "${swap_device_name}"-integrity /dev/mapper/"${swap_device_name}"
+    swapon /dev/mapper/"${swap_device_name}"-integrity
+}
+
+stop(){
+    swapoff /dev/mapper/"${swap_device_name}"-integrity
+    dm-integrity-setup -d "${swap_device_name}"-integrity
+    dm-integrity-setup -d "${swap_device_name}"
+}
