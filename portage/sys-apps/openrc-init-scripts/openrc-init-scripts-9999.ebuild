@@ -19,6 +19,7 @@ RDEPEND="${DEPEND} sys-apps/openrc
 	acct-group/in_tftpd_dusteater
 	acct-user/in_tftpd_esadc
 	acct-group/in_tftpd_esadc
+	acct-group/cg_bg
 "
 
 src_install(){
