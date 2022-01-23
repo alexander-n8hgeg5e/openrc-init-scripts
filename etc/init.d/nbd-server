@@ -10,5 +10,8 @@ command=nbd-server
 command_args="${nbd-server_args}"
 
 depend() {
-need net iptables ip6tables
+
+if [[ "$RC_SVCNAME" != nbd-server ]];then
+    need net iptables ip6tables
+fi
 }
