@@ -26,6 +26,7 @@ start() {
     # setup permissions
     chown :cg_bg "${cgroup_path}/cgroup.procs" "${rc_cgroup_path}/cgroup.procs"
     chmod go+rw  "${cgroup_path}/cgroup.procs" "${rc_cgroup_path}/cgroup.procs"
+    cgroup2_set_limits
 	
 	#echo $(gen_io_lat_strings ${CG_BG_DEFAULT_IOLAT} ${CG_BG_EXTRA_DEFAULT_DEVICES}) > "${rc_cgroup_path}/io.latency"
 	#echo $(gen_io_lat_strings ${CG_BG_DEFAULT_IOLAT} ${CG_BG_EXTRA_DEFAULT_DEVICES}) \> "${rc_cgroup_path}/io.latency"
