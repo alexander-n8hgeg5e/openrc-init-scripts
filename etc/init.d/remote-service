@@ -10,8 +10,10 @@ servicename="${svcdata[name]}"
 description="This is the remote service \"${servicename}\" provided by node \"${providingnode}\""
 
 depend() {
-provide "remote_${servicename}"
-need "${providingnode} cluster-com"
+if [[ "${RC_SVCNAME}" != remote-service ]];then
+	provide "remote_${servicename}"
+	need "${providingnode} cluster-com"
+fi
 }
 
 start() {

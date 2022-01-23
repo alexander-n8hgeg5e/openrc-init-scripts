@@ -9,7 +9,9 @@ swap_device_name="${without_prefix}"
 [[ -n ${swap_device_name} ]] || swap_device_name="/dev/null"
 
 depend() {
-need lvm
+if [[ "${RC_SVCNAME}" != integrity-swap ]];then
+    need lvm
+fi
 }
 
 start(){
