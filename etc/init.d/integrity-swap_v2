@@ -1,0 +1,23 @@
+#!/sbin/openrc-run
+# Copyright 2020 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+. /lib/rc/sh/rc-linkname-parsers.sh
+parse_svcdata
+
+# ${prefix}_${node}_${name_with_underscores}
+name_with_underscores="${svcdata[name]}"
+
+swap_dev_name="${name_with_underscores}"
+
+description="enable lvm based swap partition ${swap_dev_name}"
+
+start(){
+    integritysetup open "/dev/mapper/${swap_dev_name}" "${swap_dev_name}-i"   || eerror "failed to enable integrity target"
+    swapon "/dev/mapper/${swap_dev_name}-i"
+}
+
+stop(){
+    swapoff "/dev/mapper/${swap_dev_name}-i" || eerror "failed to disable integrity target"
+    dmsetup close "${swap_dev_name}-i"
+}
