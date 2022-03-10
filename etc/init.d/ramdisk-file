@@ -35,6 +35,7 @@ start()
                                 sed 's/[^0-9]//g'\
                               )"\
             || free_space_k="-1"
+            einfo "free space = $(( ${free_space_k}/1024 )) Mib"
             if [[ ${free_space_k} -gt ${max_allocate_space} ]];then
                 allocate_space_k="${max_allocate_space}"
             elif [[ ${free_space_k} -ge "${min_allocate_space}" ]];then
