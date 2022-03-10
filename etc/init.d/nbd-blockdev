@@ -21,11 +21,11 @@ nbd_server_export_name="${need_service_name#*nbd-server*_}"
 nodename="${need_service_name#*cluster*_}"
 nodename="${nodename%%_*}"
 
-depend(){
-    if [[ "${RC_SVCNAME}" != "nbd-blockdev" ]];then
-        need "${need_service_name}"
-    fi
-}
+#depend(){
+#    if [[ "${RC_SVCNAME}" != "nbd-blockdev" ]];then
+#        need "${need_service_name}"
+#    fi
+#}
 
 start()
 {
