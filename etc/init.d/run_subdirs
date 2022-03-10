@@ -20,28 +20,28 @@ need root
 
 start() {
     einfo "populating run subdirs"
-    for node in $(cat /etc/nodelist);do
-        einfo "node ${node}"
+    #for node in $(cat /etc/nodelist);do
+    #    einfo "node ${node}"
 
-        if [[ "${node}" != "$(hostname)" ]];then
-            mkdir -p   "/run/${node}"
-            chmod 0751 "/run/${node}"
-        else
-            # ln -s "." "/run/${node}"
-            linkname="/run/${node}"
-            linktarget="."
-            if ! [[ -e "${linkname}" ]];then
-                ln -s  "${linktarget}" "${linkname}" 
-            elif [[ "$(readlink ${linkname})" != "${linktarget}" ]];then
-                eerror "ERROR: Existing path \"${linkname}\" is not a symlink to \"${linktarget}\". Expecting nothing or the symlink there."
-            else
-                einfo "Link ${linkname} is good."
-            fi
-        fi
-    done
+    #    if [[ "${node}" != "$(hostname)" ]];then
+    #        mkdir -p   "/run/${node}"
+    #        chmod 0751 "/run/${node}"
+    #    else
+    #        # ln -s "." "/run/${node}"
+    #        linkname="/run/${node}"
+    #        linktarget="."
+    #        if ! [[ -e "${linkname}" ]];then
+    #            ln -s  "${linktarget}" "${linkname}" 
+    #        elif [[ "$(readlink ${linkname})" != "${linktarget}" ]];then
+    #            eerror "ERROR: Existing path \"${linkname}\" is not a symlink to \"${linktarget}\". Expecting nothing or the symlink there."
+    #        else
+    #            einfo "Link ${linkname} is good."
+    #        fi
+    #    fi
+    #done
 
-    mkdir -p   "/run/tmp"
-    chmod 1777 "/run/tmp"
+    #mkdir -p   "/run/tmp"
+    #chmod 1777 "/run/tmp"
 	populate_run_tree
 }
 stop(){
