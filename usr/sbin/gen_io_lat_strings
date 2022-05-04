@@ -10,7 +10,7 @@ def parse_args():
     global args
     ap=ArgumentParser()
     ap.add_argument(dest='io_latency')
-    ap.add_argument(dest='additional_devices',nargs='+')
+    ap.add_argument(dest='additional_devices',nargs='*')
     args=ap.parse_args()
 
 def gen_io_lat_strings(iolat, extra_dev):
