@@ -1,0 +1,48 @@
+#!/sbin/openrc-run
+# Copyright 2020 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+description='setup cgroupv2 "realtime like firefox or so"'
+
+depend() {
+    need cgroups
+}
+
+
+cgroup2_remove() {
+	einfo skipping cgroup2 remove
+}
+
+start() {
+	CG_REALTIME_DEFAULT_IOLAT=100000
+	CG_REALTIME_EXTRA_DEFAULT_DEVICES="sda sdb sbc sdd"
+    cgroup_path="$(cgroup2_find_path)"
+	[ -n "${cgroup_path}" ] || return 1
+	[ -d "${cgroup_path}" ] || mkdir "${cgroup_path}"
+    rc_cgroup_path="${cgroup_path}/${RC_SVCNAME}"
+	[ -d "${rc_cgroup_path}" ] || mkdir "${rc_cgroup_path}"
+
+    # setup permissions
+    chown :cg_realtime "${cgroup_path}/cgroup.procs" "${rc_cgroup_path}/cgroup.procs"
+    chmod go+rw  "${cgroup_path}/cgroup.procs" "${rc_cgroup_path}/cgroup.procs"
+    cgroup2_set_limits
+	einfo "gen_io_lat_strings args: $CG_REALTIME_DEFAULT_IOLAT $CG_REALTIME_EXTRA_DEFAULT_DEVICES"
+	lat_strings="$(gen_io_lat_strings $CG_REALTIME_DEFAULT_IOLAT $CG_REALTIME_EXTRA_DEFAULT_DEVICES)"
+    einfo "lat strings: ${lat_strings}"
+
+	IFS="\n"
+	for line in $lat_strings; do
+		
+		einfo "\"${line}\"" \> "${rc_cgroup_path}/io.latency"
+		
+		echo "${line}" > "${rc_cgroup_path}/io.latency"
+	done
+    # default is 100
+    # this makes firefox run smoothly
+    echo 10000 > ${rc_cgroup_path}/cpu.weight
+	
+}
+
+stop(){
+	einfo "stopping ${RC_SVCNAME}"
+}
