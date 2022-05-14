@@ -15,7 +15,7 @@ cgroup2_remove() {
 }
 
 start() {
-	CG_BG_DEFAULT_IOLAT=1000000
+	CG_BG_DEFAULT_IOLAT=10000000
 	CG_BG_EXTRA_DEFAULT_DEVICES="sda sdb sbc sdd"
     cgroup_path="$(cgroup2_find_path)"
 	[ -n "${cgroup_path}" ] || return 1
@@ -27,22 +27,21 @@ start() {
     chown :cg_bg "${cgroup_path}/cgroup.procs" "${rc_cgroup_path}/cgroup.procs"
     chmod go+rw  "${cgroup_path}/cgroup.procs" "${rc_cgroup_path}/cgroup.procs"
     cgroup2_set_limits
-	
-	#echo $(gen_io_lat_strings ${CG_BG_DEFAULT_IOLAT} ${CG_BG_EXTRA_DEFAULT_DEVICES}) > "${rc_cgroup_path}/io.latency"
-	#echo $(gen_io_lat_strings ${CG_BG_DEFAULT_IOLAT} ${CG_BG_EXTRA_DEFAULT_DEVICES}) \> "${rc_cgroup_path}/io.latency"
+	einfo "gen_io_lat_strings args: $CG_BG_DEFAULT_IOLAT $CG_BG_EXTRA_DEFAULT_DEVICES"
+	lat_strings="$(gen_io_lat_strings $CG_BG_DEFAULT_IOLAT $CG_BG_EXTRA_DEFAULT_DEVICES)"
+    einfo "lat strings: ${lat_strings}"
 
-	#lat_strings=($(gen_io_lat_strings $CG_BG_DEFAULT_IOLAT $CG_BG_EXTRA_DEFAULT_DEVICES))
-
-	#IFS="\n"
-	#for line in $lat_strings; do
-	#	
-	#	einfo "\"${line}\"" \> "${rc_cgroup_path}/io.latency"
-	#	
-	#	echo "${line}" > "${rc_cgroup_path}/io.latency"
-	#done
-    
+	IFS="\n"
+	for line in $lat_strings; do
+		
+		einfo "\"${line}\"" \> "${rc_cgroup_path}/io.latency"
+		
+		echo "${line}" > "${rc_cgroup_path}/io.latency"
+	done
+	wf="${rc_cgroup_path}/cpu.weight"
+	[[ -e "${wf}" ]] && echo 10 > "${wf}"
 }
 
 stop(){
-	einfo ""
+	einfo "stopping ${RC_SVCNAME}"
 }
