@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+from subprocess import check_output
+from os import stat,minor,major
+from os.path import exists
+from re import match,sub
+from stat import S_ISBLK
+from argparse import ArgumentParser
+
+aliases = {
+            'io_latency':  ['iolat'],
+            'io_cost_qos': ['costq'],
+          }
+
+def parse_args():
+    global args
+    global aliases
+    ap = ArgumentParser()
+    saps = ap.add_subparsers(title="modes",help="select subcommand, further help with subcommand -h",dest="mode")
+    io_latency_args  = saps.add_parser("io_latency",aliases=aliases["io_latency"],help="generate strings to feed in io.latency")
+    io_cost_qos_args = saps.add_parser("io_cost_qos",aliases=aliases["io_cost_qos"], help="generate strings to feed in io.cost.qos")
+    io_latency_args.add_argument(dest='io_latency',help="target latency in microseconds",type=int)
+    ad_help="omit /dev/"
+    io_latency_args.add_argument(dest='additional_devices',nargs='*',help=ad_help)
+    io_cost_qos_args.add_argument(dest='additional_devices',nargs='*',help=ad_help)
+    args=ap.parse_args()
+
+def print_device_line(mode,nums,io_latency=None):
+    if mode in ['io_latency','iolat']:
+        print(f'{nums} target={io_latency}')
+    elif mode in ['io_cost_qos','costq']:
+        print(f'{nums} enable=1 ctrl=auto')
+    else:
+        print('error',mode)
+
+
+def gen_strings(mode,io_latency=None, additional_devices=[]):
+    filesystems=check_output(['bash','-c',"cat /etc/fstab | sed -E '/^[ ]*[#].*$/d;/^\s*$/d;s@^[ ]*@@;/[1-9][0-9]*.[1-9][0-9]*.[1-9][0-9]*.[1-9][0-9]*[:]/d;/^[^/]/d;s@([^ ]*)[ ].*$@\\1@'"])
+    filesystems=filesystems.decode().split("\n")
+    for fs in filesystems:
+        if exists(fs) and S_ISBLK(stat(fs).st_mode):
+            st=stat(fs)
+            nums=str(major(st.st_rdev))+":"+str(minor(st.st_rdev))
+            print_device_line(mode,nums,io_latency=io_latency)
+        with open('/proc/partitions') as f:
+            partitions=f.read().split('\n')
+    partitions=partitions[1:]
+    for line in partitions:
+        for dev in additional_devices:
+            pat='^[ ]*[0-9]+[ ]+[0-9]+[ ]+[1-9][0-9]*[ ]+'+dev+'[ ]*$'
+            if match(pat,line):
+                sub_match_pat='^[ ]*([0-9]+)[ ]+([0-9]+)[ ]+[1-9][0-9]*[ ]+([a-z]+)[ ]*$'
+                nums=sub(sub_match_pat,'\\1:\\2',line)
+                print_device_line(mode,nums,io_latency=io_latency)
+
+if __name__=='__main__':
+    parse_args()
+    #print(args)
+    kwargs={'additional_devices':args.additional_devices}
+    if args.mode=='io_latency':
+        kwargs.update({'io_latency':args.io_latency})
+    gen_strings(args.mode,**kwargs)
