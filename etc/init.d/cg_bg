@@ -31,15 +31,24 @@ start() {
 	lat_strings="$(gen_io_lat_strings $CG_BG_DEFAULT_IOLAT $CG_BG_EXTRA_DEFAULT_DEVICES)"
     einfo "lat strings: ${lat_strings}"
 
+ 	io_cost_qos_strings="$(gen_cgroup_io_controller_setup_strings costq $CG_BG_EXTRA_DEFAULT_DEVICES)"
+    einfo "io.cost.qos setup lines: ${io_cost_qos_strings_strings}"
+
 	IFS="\n"
-	for line in $lat_strings; do
-		
+	for line in "${lat_strings}"; do
 		einfo "\"${line}\"" \> "${rc_cgroup_path}/io.latency"
-		
 		echo "${line}" > "${rc_cgroup_path}/io.latency"
 	done
+	for line in "${io_cost_qos_strings}"; do
+		einfo "\"${line}\"" \> "${cgroup_path}/io.cost_qos"
+		echo "${line}" > "${cgroup_path}/io.cost_qos"
+	done
+
 	wf="${rc_cgroup_path}/cpu.weight"
-	[[ -e "${wf}" ]] && echo 10 > "${wf}"
+	[[ -e "${wf}" ]] && echo 1 > "${wf}"
+
+	wf="${rc_cgroup_path}/io.weight"
+	[[ -e "${wf}" ]] && echo 1 > "${wf}"
 }
 
 stop(){
