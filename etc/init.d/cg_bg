@@ -28,11 +28,13 @@ start() {
     chmod go+rw  "${cgroup_path}/cgroup.procs" "${rc_cgroup_path}/cgroup.procs"
     cgroup2_set_limits
     
-    # enable io,cpu controller
+    # enable io,cpu,memory controller
     einfo enabling cpu cgroup subtree control
     echo +cpu > "${cgroup_path}/cgroup.subtree_control"
     einfo enabling io cgroup subtree control
     echo +io  > "${cgroup_path}/cgroup.subtree_control"
+    einfo enabling memory cgroup subtree control
+    echo +memory  > "${cgroup_path}/cgroup.subtree_control"
  	io_cost_qos_strings="$(gen_cgroup_io_controller_setup_strings costq $CG_BG_EXTRA_DEFAULT_DEVICES)"
     einfo "io.cost.qos setup lines:"
     einfo "${io_cost_qos_strings}"
@@ -57,6 +59,14 @@ start() {
 
 	wf="${rc_cgroup_path}/io.prio.class"
 	[[ -e "${wf}" ]] && echo idle > "${wf}"
+
+    # calculate memory.high
+    mem_high_bytes=$(cat /proc/meminfo|grep MemTotal|sed -E 's@^MemTotal[:][ ]*([1-9][0-9]*)[^0-9]*$@scale=0;\1 * 1024 / 3@'|busybox bc)
+    mem_max_bytes=$(echo "scale=0; ${mem_high_bytes} * 2" | busybox bc)
+    echo "${mem_high_bytes}" > "${rc_cgroup_path}/memory.high"
+    echo "${mem_max_bytes}" > "${rc_cgroup_path}/memory.max"
+    einfo "memory.high = $(cat "${rc_cgroup_path}/memory.high")"
+    einfo "memory.max = $(cat "${rc_cgroup_path}/memory.max")"
 }
 
 stop(){
