@@ -1,0 +1,17 @@
+#!/sbin/openrc-run
+# Copyright 2022 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="wait-node"
+description="waits for the node configured by symlink postfix"
+node="${RC_SVCNAME#${name}_}"
+
+start(){
+    ebegin "waiting for node \"${node}\""
+    while ! ssh "root@${node}" date >/dev/null; do
+        einfo "waiting for node ${node}"
+        sleep 5
+    done
+    eend
+}
+
