@@ -1,0 +1,13 @@
+#!/sbin/openrc-run
+# Copyright 2022 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="wait-mds"
+description="waits for mds servers"
+count="{RC_SVCNAME#"${name}"_}"
+
+start(){
+    while ! ceph -s |grep mds|grep -E '\s*mds[:] *([0-9]+)/\1 *daemons up'; do
+        sleep 5
+    done
+}
