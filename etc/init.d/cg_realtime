@@ -15,6 +15,7 @@ cgroup2_remove() {
 
 start() {
 	CG_REALTIME_DEFAULT_IOLAT=100000
+    [[ -z "${CG_REALTIME_IOLAT}" ]] && CG_REALTIME_IOLAT="${CG_REALTIME_DEFAULT_IOLAT}"
 	CG_REALTIME_EXTRA_DEFAULT_DEVICES="sda sdb sbc sdd"
     cgroup_path="$(cgroup2_find_path)"
 	[ -n "${cgroup_path}" ] || return 1
@@ -26,8 +27,8 @@ start() {
     chown :cg_realtime "${cgroup_path}/cgroup.procs" "${rc_cgroup_path}/cgroup.procs"
     chmod go+rw  "${cgroup_path}/cgroup.procs" "${rc_cgroup_path}/cgroup.procs"
     cgroup2_set_limits
-	einfo "gen_io_lat_strings args: $CG_REALTIME_DEFAULT_IOLAT $CG_REALTIME_EXTRA_DEFAULT_DEVICES"
-	lat_strings="$(gen_io_lat_strings $CG_REALTIME_DEFAULT_IOLAT $CG_REALTIME_EXTRA_DEFAULT_DEVICES)"
+	einfo "gen_io_lat_strings args: $CG_REALTIME_IOLAT $CG_REALTIME_EXTRA_DEFAULT_DEVICES"
+	lat_strings="$(gen_io_lat_strings $CG_REALTIME_IOLAT $CG_REALTIME_EXTRA_DEFAULT_DEVICES)"
     einfo "lat strings: ${lat_strings}"
 
 	IFS="\n"
