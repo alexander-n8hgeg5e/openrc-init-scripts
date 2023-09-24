@@ -17,6 +17,7 @@ cgroup2_remove() {
 start() {
 	CG_BG_DEFAULT_IOLAT=10000000
 	CG_BG_EXTRA_DEFAULT_DEVICES="sda sdb sbc sdd"
+	CG_BG_ENABLE_COST_QOS=0
     cgroup_path="$(cgroup2_find_path)"
 	[ -n "${cgroup_path}" ] || return 1
 	[ -d "${cgroup_path}" ] || mkdir "${cgroup_path}"
@@ -31,31 +32,35 @@ start() {
     # enable io,cpu,memory controller
     einfo enabling cpu cgroup subtree control
     echo +cpu > "${cgroup_path}/cgroup.subtree_control"
-    einfo enabling io cgroup subtree control
-    echo +io  > "${cgroup_path}/cgroup.subtree_control"
+	einfo enabling io cgroup subtree control
+	echo +io  > "${cgroup_path}/cgroup.subtree_control"
     einfo enabling memory cgroup subtree control
     echo +memory  > "${cgroup_path}/cgroup.subtree_control"
- 	io_cost_qos_strings="$(gen_cgroup_io_controller_setup_strings costq $CG_BG_EXTRA_DEFAULT_DEVICES)"
-    einfo "io.cost.qos setup lines:"
-    einfo "${io_cost_qos_strings}"
-
-	IFS=$'\n'
-    file="${cgroup_path}/io.cost.qos"
-	for line in  $io_cost_qos_strings ; do
-        grepline=$(grep $(echo "${line}" | cut -d' ' -f1) "${file}")
-        if [[ $? -ne 0 ]] ;then
-		    einfo "\"${line}\"" \> "${file}"
-            echo "${line}" > "${file}"
-        else
-            einfo "already active: \"${grepline}\""
-        fi
-	done
+	if [[ "${CG_BG_ENABLE_COST_QOS}" -eq 1 ]];then
+        io_cost_qos_strings="$(gen_cgroup_io_controller_setup_strings costq $CG_BG_EXTRA_DEFAULT_DEVICES)"
+		einfo "io.cost.qos setup lines:"
+		einfo "${io_cost_qos_strings}"
+	
+		IFS=$'\n'
+		file="${cgroup_path}/io.cost.qos"
+		for line in  $io_cost_qos_strings ; do
+		    grepline=$(grep $(echo "${line}" | cut -d' ' -f1) "${file}")
+		    if [[ $? -ne 0 ]] ;then
+			    einfo "\"${line}\"" \> "${file}"
+		        echo "${line}" > "${file}"
+		    else
+		        einfo "already active: \"${grepline}\""
+		    fi
+		done
+	fi
 
 	wf="${rc_cgroup_path}/cpu.weight"
 	[[ -e "${wf}" ]] && echo 1 > "${wf}"
 
-	wf="${rc_cgroup_path}/io.weight"
-	[[ -e "${wf}" ]] && echo 1 > "${wf}"
+	if [[ "${CG_BG_ENABLE_COST_QOS}" -eq 1 ]];then
+		wf="${rc_cgroup_path}/io.weight"
+		[[ -e "${wf}" ]] && echo 1 > "${wf}"
+	fi
 
 	wf="${rc_cgroup_path}/io.prio.class"
 	[[ -e "${wf}" ]] && echo idle > "${wf}"
