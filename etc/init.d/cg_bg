@@ -59,7 +59,7 @@ start() {
 
 	if [[ "${CG_BG_ENABLE_COST_QOS}" -eq 1 ]];then
 		wf="${rc_cgroup_path}/io.weight"
-		[[ -e "${wf}" ]] && echo 1 > "${wf}"
+		[[ -e "${wf}" ]] && echo 75 > "${wf}"
 	fi
 
 	wf="${rc_cgroup_path}/io.prio.class"
