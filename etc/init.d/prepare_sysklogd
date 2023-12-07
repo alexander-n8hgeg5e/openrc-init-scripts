@@ -17,7 +17,12 @@ start(){
 }
 
 prepare_0(){
-    ebegin checking /dev/log symlink
+    ebegin Checking /dev/log symlink
+    if ! [[ -e /run/logdaemon ]]; then
+        mkdir /run/logdaemon \
+        && chown logdaemon:logdaemon /run/logdaemon
+    fi
+    [[ -d /run/logdaemon ]] || ewarn "/run/logdaemon is not a directory. This is probably not good !"
     [[ -h /dev/log ]] \
     && [[ "$( realpath "$(readlink /dev/log)")" = "/run/logdaemon/log" ]] \
     || if ln -s /run/logdaemon/log /dev/log; then
@@ -27,22 +32,34 @@ prepare_0(){
 }
 
 prepare_1(){
-    ebegin 'chown/chmod /proc/kmsg'
-    chown :logdaemon /proc/kmsg
-    chmod g=r /proc/kmsg
+    ebegin 'Checking group of /proc/kmsg'
+    if ! [[ "$(stat --format='%G' /proc/kmsg)" = logdaemon ]] ;then
+        einfo "setting group to logdaemon"
+        chown :logdaemon /proc/kmsg
+    fi
+    ebegin 'Checking permissions of /proc/kmsg'
+        perms=$(stat --format='%A' /proc/kmsg)
+        if ! $(echo $perms | grep -E -q ....r--...); then
+            ebegin 'Setting permissions of /proc/kmsg'
+            chmod g=r /proc/kmsg
+        fi
     eend
 }
 
 prepare_2(){
-    ebegin 'syslog cap'
-    filecap /usr/sbin/syslogd syslog
+    ebegin 'Checking syslog cap for syslogd'
+    if ! filecap /usr/sbin/syslogd|grep -E -q 'effective\s+/usr/sbin/syslogd\s+syslog';then
+       filecap /usr/sbin/syslogd syslog
+    fi
     eend
 }
 
 prepare_3(){
-    ebegin 'syslog fifo'
-    mkfifo /var/log/fifo \
-    && chown logdaemon:logdaemon /var/log/fifo \
-    && chmod 0640 /var/log/fifo
+    ebegin 'Checking syslog fifo'
+    if ! [[ -p /var/log/fifo ]];then
+        mkfifo /var/log/fifo \
+        && chown logdaemon:logdaemon /var/log/fifo \
+        && chmod 0640 /var/log/fifo
+    fi
     eend
 }
