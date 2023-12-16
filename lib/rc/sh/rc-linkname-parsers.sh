@@ -8,6 +8,10 @@ parse_svcdata(){
 
 	# need to opererate on:
 	# ${prefix}_${node-or-hostname}_${service-description_or_something_with_underscores}
+	#                                       .__            --.
+	#                  /|\                  | \    /|\      /|
+	#                   |                      \    |      /
+	#              svcdata[node]               svcdata[name]
 	
 	#  # := rm shortest prefix 
 	# %% := rm longest suffix
