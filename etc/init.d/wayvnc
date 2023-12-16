@@ -1,0 +1,52 @@
+#!/sbin/openrc-run
+# Copyright 2023 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="${RC_SVCNAME}"
+description="exports screen 3"
+
+whatever="${RC_SVCNAME%-*-*}"   # what-ever-1-2 -> what-ever
+numbers="${RC_SVCNAME#"${whatever}"}"
+screen_index="${numbers##*-}"  # leave only last thing after the last "-"
+desktop_index="${numbers#-}"   # strip "-" at the beginning
+desktop_index="${desktop_index%%-*}" # leave only first thing befor the first "-"
+wayland_user="${whatever#*-}"  # strip "wayvnc-" from wayvnc-username
+
+command="/usr/bin/wayvnc"
+command_user=wayvnc
+command_args="-o HEADLESS-${screen_index} -S /run/${command_user}/wayvncctl-${screen_index} -Ldebug --max-fps=60 --gpu 192.168.177.2 590${screen_index}"
+command_background=1
+pidfile="/var/run/${RC_SVCNAME}.pid"
+output_logger="logger -p daemon.info"
+error_logger="logger -p  daemon.warning"
+
+start_stop_daemon_args="-N-15"
+
+
+
+depend() {
+	if ! [[ $RC_SVCNAME == wayvnc ]];then
+	need "wayland-${wayland_user}-${desktop_index}"
+	fi
+}
+start(){
+	ebegin "Preparing wayvnc start"
+	einfo "command_args = \"${command_args}\""
+	if ! [[ $desktop_index =~ [0-9]* ]];then
+		eerror "unsable desktop index \"${desktop_index}\""
+		eend 1
+		return 1
+	fi
+	if ! [[ $screen_index =~ [0-9]* ]];then
+		eerror "unsable screen index \"${screen_index}\""
+		eend 1
+		return 1
+	fi
+	export WAYLAND_DISPLAY="wayland-${desktop_index}"
+	export DISPLAY=":${desktop_index}"
+	export XDG_RUNTIME_DIR="/run/wayland/${wayland_user}"
+	einfo "wayvnc for \"${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}\"  export screen: \"${screen_index}\""
+	einfo "DISPLAY=\"${DISPLAY}\""
+	eend
+	default_start
+}

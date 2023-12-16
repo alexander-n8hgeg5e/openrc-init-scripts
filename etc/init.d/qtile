@@ -1,0 +1,83 @@
+#!/sbin/openrc-run
+# Copyright 2023 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="qtile"
+description="headless wayland with qtile windowmanager"
+command=/usr/bin/qtile
+declare -A svcdata
+parse_svcdata(){
+	# ${prefix}_${some_-_-user-_-_name}-${pos_id_number}
+	local prefix="${RC_SVCNAME%%-*}" 
+	local without_prefix="${RC_SVCNAME#${prefix}}"
+	local without_prefix="${without_prefix#-}"
+	svcdata[id]="${without_prefix##*-}"
+	svcdata[user]="${without_prefix%-*}"
+}
+parse_svcdata
+desktop_index="${svcdata[id]}"
+command_args="start -b wayland -l WARNING"
+command_background=1
+pidfile="/var/run/${RC_SVCNAME}.pid"
+command_user="${svcdata[user]}"
+start_stop_daemon_args="-nice -15"
+
+depend() {
+    need seatd
+	provide "wayland-${command_user}-${desktop_index}"
+}
+
+start(){
+	ebegin "Preparing qtile start"
+	export DISPLAY=":${desktop_index}"
+	export WAYLAND_DISPLAY="wayland-${desktop_index}"
+	export XDG_RUNTIME_DIR="/run/wayland/${command_user}"
+	export WLR_RENDERER="gles2"
+	export WLR_LIBINPUT_NO_DEVICES="0"
+	export WLR_BACKENDS="headless,libinput"
+	if ! [[ -e  "${XDG_RUNTIME_DIR}" ]] ;then
+		mkdir "${XDG_RUNTIME_DIR}"
+		chmod g=rwXs "${XDG_RUNTIME_DIR}"
+		einfo "XDG_RUNTIME_DIR (\"${XDG_RUNTIME_DIR}\") created" 
+	fi
+	if ! [[ -e  "${XDG_RUNTIME_DIR}" ]];then
+		eend 1
+	fi
+	einfo "command_args = \"${command_args}\""
+	if ! [[ $desktop_index =~ [0-9]* ]];then
+		eerror "unsable desktop index \"${desktop_index}\""
+		eend 1
+	else
+		einfo "using desktop index \"${desktop_index}\""
+	fi
+	einfo "user: \"${command_user}\""
+	einfo "WAYLAND_DISPLAY=\"${WAYLAND_DISPLAY}\""
+	einfo "DISPLAY=\"${DISPLAY}\""
+	einfo "XDG_RUNTIME_DIR=\"${XDG_RUNTIME_DIR}\""
+	eend
+	default_start
+    ebegin "waiting for wayland socket"
+	local sp="${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}"
+	while ! [[ -S "${sp}" ]];do
+		sleep 0.1
+		echo -n .
+	done
+	eend
+	chmod g=rw,o=rw "${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}"
+	ebegin "doing adjustments to wayland compositor..."
+	while ! sudo -iu "${command_user}" env DISPLAY="${DISPLAY}" xhost "+local:" 1>/dev/null ; do
+	    echo -n .
+	    sleep 0.4
+	done
+	sudo -iu "${command_user}" \
+		env XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR}" WAYLAND_DISPLAY="${WAYLAND_DISPLAY}" DISPLAY="${DISPLAY}" \
+		wlr-randr \
+		--output HEADLESS-1 --pos 0,336 --on \
+		--output HEADLESS-2 --custom-mode 1033x581 --pos 1366,581 --on \
+		--output HEADLESS-3 --on --pos 1366,0 --custom-mode 1033x581
+	# the more local the key repeat the better
+	sudo -iu "${command_user}" \
+		env XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR}" WAYLAND_DISPLAY="${WAYLAND_DISPLAY}" DISPLAY="${DISPLAY}" \
+		xset r off
+	eend
+}
