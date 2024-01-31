@@ -1,0 +1,27 @@
+#!/sbin/openrc-run
+# Copyright 2022 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="wait-ceph-pool"
+description="waits for ceph pool named by the last part after a \"_\" of a symlinks name to this script"
+
+start(){
+	if [[ "${RC_SVCNAME}" = "${name}" ]];then
+		error "this script is not intended to be called directly. call by symlink named ${name}_thepoolname"
+	fi
+    poolname="${RC_SVCNAME#${name}_}"
+	einfo "Waiting for ceph-pool: \"${poolname}\""
+    pg_num="$(ceph osd pool get "${poolname}" pg_num)"
+    pg_num="${pg_num#pg_num[:]}"
+    pg_num="${pg_num# }"
+    pg_active_num="$(ceph pg ls-by-pool "${poolname}" active | grep -E '^[0-9]+[.]' | wc -l)"
+    while [ "${pg_active_num}" -ne "${pg_num}" ] ;do
+        einfo "rbd pg active: ${pg_active_num}/${pg_num}"
+        sleep 5
+        pg_num="$(ceph osd pool get "${poolname}" pg_num)"
+        pg_num="${pg_num#pg_num[:]}"
+        pg_active_num="$(ceph pg ls-by-pool "${poolname}" active | grep -E '^[0-9]+[.]' | wc -l)"
+    done
+    einfo "pg active : ${pg_active_num}/${pg_num}"
+}
+
