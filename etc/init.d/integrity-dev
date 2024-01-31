@@ -1,0 +1,17 @@
+#!/sbin/openrc-run
+# Copyright 2020 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+
+dev_name="${RC_SVCNAME#*_}" 
+
+
+description="enable lvm based swap partition ${swap_dev_name}"
+
+start(){
+    integritysetup open "/dev/mapper/${dev_name}" "${dev_name}-i"   || eerror "failed to enable integrity target"
+}
+
+stop(){
+    integritysetup close "${dev_name}-i"
+}
