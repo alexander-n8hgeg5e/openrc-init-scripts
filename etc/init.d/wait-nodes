@@ -1,0 +1,25 @@
+#!/sbin/openrc-run
+# Copyright 2022 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+name="wait-nodes"
+description="waits for the configureed nodes"
+TIMEOUT=10
+
+start(){
+    nodes_set_name="${RC_SVCNAME#${name}_}"
+    t0=$(date '+%s')    
+    while ! ran -n $(cat /etc/"${nodes_set_name}") -- date|grep 'nodes offline'|grep -E \\\[\\s\*\\\]  ; do
+        einfo "not all nodes in set ${nodes_set_name}  are online"
+        if ran -n $(cat /etc/"${nodes_set_name}") -- date|grep 'nodes offline'|grep -E '\[\s*['\''][^'\'']*['\''][\s,]*\]';then
+            time_left=$(( $TIMEOUT - $(date '+%s') + $t0 ))
+            einfo "waiting ${time_left} [s] for last node in set ${nodes_set_name} to come online"
+            if [[ $time_left -le 0  ]];then
+                einfo "ignoring missing node of set ${nodes_set_name}"
+                break
+            fi
+        fi
+        sleep 5
+    done
+}
+
