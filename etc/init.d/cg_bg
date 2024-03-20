@@ -18,6 +18,7 @@ start() {
 	CG_BG_DEFAULT_IOLAT=10000000
 	CG_BG_EXTRA_DEFAULT_DEVICES="sda sdb sbc sdd"
 	CG_BG_ENABLE_COST_QOS=0
+    CG_BG_ENABLE_CONTROLLER_IO=0
     cgroup_path="$(cgroup2_find_path)"
 	[ -n "${cgroup_path}" ] || return 1
 	[ -d "${cgroup_path}" ] || mkdir "${cgroup_path}"
@@ -32,8 +33,10 @@ start() {
     # enable io,cpu,memory controller
     einfo enabling cpu cgroup subtree control
     echo +cpu > "${cgroup_path}/cgroup.subtree_control"
-	einfo enabling io cgroup subtree control
-	echo +io  > "${cgroup_path}/cgroup.subtree_control"
+    if [[ "${CG_BG_ENABLE_CONTROLLER_IO}" -eq 1 ]];then
+	    einfo enabling io cgroup subtree control
+	    echo +io  > "${cgroup_path}/cgroup.subtree_control"
+    fi
     einfo enabling memory cgroup subtree control
     echo +memory  > "${cgroup_path}/cgroup.subtree_control"
 	if [[ "${CG_BG_ENABLE_COST_QOS}" -eq 1 ]];then
