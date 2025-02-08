@@ -33,7 +33,7 @@ start(){
 	ebegin "Preparing qtile start"
 	export DISPLAY=":${desktop_index}"
 	export WAYLAND_DISPLAY="wayland-${desktop_index}"
-	export XDG_RUNTIME_DIR="/run/wayland/${command_user}"
+	export XDG_RUNTIME_DIR="/run/user/${command_user}"
 	export WLR_RENDERER="gles2"
 	export WLR_LIBINPUT_NO_DEVICES="0"
 	export WLR_BACKENDS="headless,libinput"
