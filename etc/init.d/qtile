@@ -21,6 +21,8 @@ command_background=1
 pidfile="/var/run/${RC_SVCNAME}.pid"
 command_user="${svcdata[user]}"
 start_stop_daemon_args="--nicelevel 0"
+stdout_logger="logger -p user.warn"
+error_logger="logger -p user.err"
 
 depend() {
     need seatd
