@@ -74,7 +74,7 @@ start(){
 	sudo -iu "${command_user}" \
 		env XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR}" WAYLAND_DISPLAY="${WAYLAND_DISPLAY}" DISPLAY="${DISPLAY}" \
 		wlr-randr \
-		--output HEADLESS-1 --pos 0,336 --on \
+		--output HEADLESS-1 --pos 0,222 --on \
 		--output HEADLESS-2 --custom-mode 1033x581 --pos 1366,581 --on \
 		--output HEADLESS-3 --on --pos 1366,0 --custom-mode 1033x581
 	# the more local the key repeat the better
